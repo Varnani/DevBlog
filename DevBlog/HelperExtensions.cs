@@ -7,46 +7,24 @@ namespace DevBlog
     internal static class HelperExtensions
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static ReadOnlySpan<char> LeftOf(this ReadOnlySpan<char> str, char c)
+        internal static string LeftOf(this string str, char c)
         {
             int index = str.IndexOf(c);
             if (index == -1) index = str.Length;
-            return str.Slice(0, index);
+            return str.Substring(0, index);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static ReadOnlySpan<char> RightOf(this ReadOnlySpan<char> span, char c)
+        internal static string RightOf(this string str, char c)
         {
-            int index = span.IndexOf(c);
-            if (index == -1) return ReadOnlySpan<char>.Empty;
-            return span.Slice(index + 1);
+            int index = str.IndexOf(c);
+            if (index == -1) return string.Empty;
+            return str.Substring(index + 1);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static bool IsSame(this ReadOnlySpan<char> span, string str)
+        internal static void SendHTMLAndClose(this HttpListenerResponse response, string html, bool headOnly)
         {
-            if (span.Length != str.Length) return false;
-
-            for (int i = 0; i < span.Length; i++)
-            {
-                char c = span[i];
-                char s = str[i];
-
-                if (s != c) return false;
-            }
-
-            return true;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static bool IsEmpty(this ReadOnlySpan<char> span)
-        {
-            return span.Length == 0;
-        }
-
-        internal static void SendHTMLAndClose(this HttpListenerResponse response, string str, bool headOnly)
-        {
-            byte[] data = Encoding.UTF8.GetBytes(str);
+            byte[] data = Encoding.UTF8.GetBytes(html);
             response.SendResponseAndClose("text/html", data, headOnly, encoding: Encoding.UTF8);
         }
 

@@ -9,8 +9,8 @@ namespace DevBlog
         private const string LISTEN_ADDR = $"http://127.0.0.1:2525/";
         private const int MAX_HANDLERS = 32;
 
-        private const string ROOT_PATH = "Root/";
-        private const string ERROR_PAGE = "error.html";
+        private const string ROOT_PATH = "Root";
+        private const string ERROR_PAGE = "error_template.html";
 
         private const string ERROR_TYPE_TOKEN = "%ERROR_TYPE%";
         private const string ERROR_MESSAGE_TOKEN = "%ERROR_MSG%";
@@ -20,7 +20,7 @@ namespace DevBlog
         private Lock lockObject = new();
         private Task? serverLoopTask = null;
 
-        private Dictionary<string, BaseRouteHandler> routers = new();
+        private Dictionary<string, BaseRouteHandler> routerDict = new();
 
         public bool Started
         {
@@ -52,6 +52,20 @@ namespace DevBlog
             serverLoopTask?.Wait();
 
             Console.WriteLine("Server closed. Bye!");
+        }
+
+        internal static void SendErrorResponse(HttpListenerResponse response, ErrorCode code, string message, bool headOnly)
+        {
+            response.StatusCode = ((int)code);
+
+            string errorPagePath = Path.Combine(ROOT_PATH, ERROR_PAGE);
+            using StreamReader stream = File.OpenText(errorPagePath);
+            string page = stream.ReadToEnd();
+
+            page = page.Replace(ERROR_TYPE_TOKEN, $"{((int)code)} - {code}");
+            page = page.Replace(ERROR_MESSAGE_TOKEN, message);
+
+            response.SendHTMLAndClose(page, headOnly);
         }
 
         private void ServerLoop()
@@ -110,8 +124,7 @@ namespace DevBlog
             HttpListenerResponse response = ctx.Response;
 
             Console.WriteLine("------------------------");
-            Console.WriteLine($"Incoming {request.HttpMethod} request from {request.Headers.Get("X-Real-IP")}");
-            Console.WriteLine($" - URL: {request.RawUrl}");
+            Console.WriteLine($"Incoming {request.HttpMethod} request from {request.Headers.Get("X-Real-IP")} to {request.RawUrl}");
             Console.WriteLine(request.Headers);
             Console.WriteLine("------------------------");
 
@@ -131,54 +144,59 @@ namespace DevBlog
 
             else
             {
-                ReadOnlySpan<char> rawUrlSpan = request.RawUrl.AsSpan();
+                string route = request.RawUrl.LeftOf('?');
+                string query = request.RawUrl.RightOf('?');
 
-                ReadOnlySpan<char> route = rawUrlSpan.LeftOf('?');
-                ReadOnlySpan<char> paramStr = rawUrlSpan.RightOf('?');
+                NameValueCollection parameters = HttpUtility.ParseQueryString(query);
 
-                NameValueCollection parameters = HttpUtility.ParseQueryString(paramStr.ToString());
-
-                if (TryFindRouter(route, out BaseRouteHandler? handler))
+                if (routerDict.TryGetValue(route, out BaseRouteHandler? handler))
                 {
-                    handler?.HandleResponse(response, parameters, isHeadOnly);
+                    handler!.HandleResponse(response, parameters, isHeadOnly);
                 }
 
                 else
                 {
-                    SendErrorResponse(response, ErrorCode.NotFound, "Content not found.", isHeadOnly);
+                    // there aren't any handlers for requested route. 
+                    // we'll try to serve a file instead.
+
+                    string file = route.LeftOf('.');
+                    string extension = route.RightOf('.');
+
+                    if (string.IsNullOrWhiteSpace(extension)) extension = "html";
+                    if (file == "/" || string.IsNullOrWhiteSpace(file)) file = "/index";
+
+                    if (file[^1] == '/')
+                    {
+                        file += "index";
+                    }
+
+                    string path = $"{ROOT_PATH}{file}.{extension}";
+
+                    if (!File.Exists(path))
+                    {
+                        SendErrorResponse(response, ErrorCode.NotFound, "Content not found.", isHeadOnly);
+                        return;
+                    }
+
+                    if (FileRequestHandlers.Handlers.TryGetValue(extension, out FileRequestHandlers.HandlerDelegate? serveHandler))
+                    {
+                        try
+                        {
+                            serveHandler!.Invoke(response, path, isHeadOnly);
+                        }
+
+                        catch (Exception)
+                        {
+                            SendErrorResponse(response, ErrorCode.Internal, "Internal server error.", isHeadOnly);
+                        }
+                    }
+
+                    else
+                    {
+                        SendErrorResponse(response, ErrorCode.Unavailable, "Content unavailable.", isHeadOnly);
+                    }
                 }
-
-                //ReadOnlySpan<char> fileName = route.LeftOf('.');
-                //ReadOnlySpan<char> extension = route.RightOf('.');
-
-                //if (extension.IsEmpty()) extension = "html".AsSpan();
-                //if (fileName.IsSame("/") || fileName.IsEmpty()) fileName = "/index";
-
-                //using StreamReader file = File.OpenText("Pages/test.html");
-                //string text = file.ReadToEnd();
-
-                //response.SendResponseAndClose(text);
             }
-        }
-
-        private bool TryFindRouter(ReadOnlySpan<char> route, out BaseRouteHandler? handler)
-        {
-            handler = null;
-            return false;
-        }
-
-        internal static void SendErrorResponse(HttpListenerResponse response, ErrorCode code, string message, bool headOnly)
-        {
-            response.StatusCode = ((int)code);
-
-            string errorPagePath = Path.Combine(ROOT_PATH, ERROR_PAGE);
-            using StreamReader stream = File.OpenText(errorPagePath);
-            string page = stream.ReadToEnd();
-
-            page = page.Replace(ERROR_TYPE_TOKEN, $"{((int)code)} - {code}");
-            page = page.Replace(ERROR_MESSAGE_TOKEN, message);
-
-            response.SendHTMLAndClose(page, headOnly);
         }
     }
 }
