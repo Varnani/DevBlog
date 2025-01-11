@@ -44,16 +44,23 @@ namespace DevBlog
             return span.Length == 0;
         }
 
-        internal static void SendResponseAndClose(this HttpListenerResponse response, string str)
+        internal static void SendHTMLAndClose(this HttpListenerResponse response, string str, bool headOnly)
         {
-            byte[] encoded = Encoding.UTF8.GetBytes(str);
-            response.SendResponseAndClose(encoded);
+            byte[] data = Encoding.UTF8.GetBytes(str);
+            response.SendResponseAndClose("text/html", data, headOnly, encoding: Encoding.UTF8);
         }
 
-        internal static void SendResponseAndClose(this HttpListenerResponse response, byte[] data)
+        internal static void SendResponseAndClose(this HttpListenerResponse response, string mime, byte[] data, bool headOnly, Encoding? encoding = null)
         {
+            response.ContentEncoding = encoding;
+            response.ContentType = mime;
             response.ContentLength64 = data.Length;
-            response.OutputStream.Write(data, 0, data.Length);
+
+            if (!headOnly)
+            {
+                response.OutputStream.Write(data, 0, data.Length);
+            }
+
             response.OutputStream.Close();
         }
     }

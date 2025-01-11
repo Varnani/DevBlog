@@ -1,20 +1,32 @@
-﻿using System.Net;
+﻿using System.Collections.Specialized;
+using System.Net;
+using System.Web;
 
 namespace DevBlog
 {
     internal class Server
     {
-        private const string PROTOCOL = "http";
-        private const string URI_PREFIX = $"{PROTOCOL}://127.0.0.1:2525/";
+        private const string LISTEN_ADDR = $"http://127.0.0.1:2525/";
+        private const int MAX_HANDLERS = 32;
 
-        private const int MAX_HANDLERS = 20;
+        private const string ROOT_PATH = "Root/";
+        private const string ERROR_PAGE = "error.html";
+
+        private const string ERROR_TYPE_TOKEN = "%ERROR_TYPE%";
+        private const string ERROR_MESSAGE_TOKEN = "%ERROR_MSG%";
 
         private bool started = false;
         private bool cancelToken = false;
         private Lock lockObject = new();
         private Task? serverLoopTask = null;
 
-        public bool Started { get => started; private set => started = value; }
+        private Dictionary<string, BaseRouteHandler> routers = new();
+
+        public bool Started
+        {
+            get => started;
+            private set => started = value;
+        }
 
         internal void Start()
         {
@@ -46,7 +58,7 @@ namespace DevBlog
         {
             Console.WriteLine("Configuring listener...");
             HttpListener listener = new();
-            listener.Prefixes.Add(URI_PREFIX);
+            listener.Prefixes.Add(LISTEN_ADDR);
 
             Console.WriteLine("Starting listener...");
             listener.Start();
@@ -90,28 +102,31 @@ namespace DevBlog
             listener.Stop();
         }
 
-        private static async Task HandleHttpRequestAsync(Task<HttpListenerContext> task)
+        private async Task HandleHttpRequestAsync(Task<HttpListenerContext> task)
         {
             HttpListenerContext ctx = await task;
 
             HttpListenerRequest request = ctx.Request;
             HttpListenerResponse response = ctx.Response;
 
-            string method = request.HttpMethod;
-
+            Console.WriteLine("------------------------");
+            Console.WriteLine($"Incoming {request.HttpMethod} request from {request.Headers.Get("X-Real-IP")}");
+            Console.WriteLine($" - URL: {request.RawUrl}");
+            Console.WriteLine(request.Headers);
             Console.WriteLine("------------------------");
 
-            Console.WriteLine(
-                $"Received {method} request.\n" +
-                $" - User: {request.RemoteEndPoint.Address}\n" +
-                $" - Raw: {request.RawUrl}\n" +
-                $" - Headers:\n{request.Headers}\n");
+            HttpMethod method = new(request.HttpMethod);
+
+            if (method != HttpMethod.Get && method != HttpMethod.Head)
+            {
+                SendErrorResponse(response, ErrorCode.NotImplemented, $"HTTP Method {request.HttpMethod} is not supported.", false);
+            }
+
+            bool isHeadOnly = method == HttpMethod.Head;
 
             if (request.RawUrl == null)
             {
-                Console.WriteLine("RawUrl is null.");
-                string text = "An error is encountered.";
-                response.SendResponseAndClose(text);
+                SendErrorResponse(response, ErrorCode.Internal, "Internal server error.", false);
             }
 
             else
@@ -119,31 +134,51 @@ namespace DevBlog
                 ReadOnlySpan<char> rawUrlSpan = request.RawUrl.AsSpan();
 
                 ReadOnlySpan<char> route = rawUrlSpan.LeftOf('?');
-                ReadOnlySpan<char> parameters = rawUrlSpan.RightOf('?');
-                ReadOnlySpan<char> fileName = route.LeftOf('.');
-                ReadOnlySpan<char> extension = route.RightOf('.');
+                ReadOnlySpan<char> paramStr = rawUrlSpan.RightOf('?');
 
-                if (extension.IsEmpty()) extension = "html".AsSpan();
-                if (fileName.IsSame("/") || fileName.IsEmpty()) fileName = "/index";
+                NameValueCollection parameters = HttpUtility.ParseQueryString(paramStr.ToString());
 
-                Console.Write(" - Route: ");
-                Console.Out.WriteLine(route);
+                if (TryFindRouter(route, out BaseRouteHandler? handler))
+                {
+                    handler?.HandleResponse(response, parameters, isHeadOnly);
+                }
 
-                Console.Write(" - Parameters: ");
-                Console.Out.WriteLine(parameters);
+                else
+                {
+                    SendErrorResponse(response, ErrorCode.NotFound, "Content not found.", isHeadOnly);
+                }
 
-                Console.Write(" - File Name: ");
-                Console.Out.WriteLine(fileName);
+                //ReadOnlySpan<char> fileName = route.LeftOf('.');
+                //ReadOnlySpan<char> extension = route.RightOf('.');
 
-                Console.Write(" - Extension: ");
-                Console.Out.WriteLine(extension);
+                //if (extension.IsEmpty()) extension = "html".AsSpan();
+                //if (fileName.IsSame("/") || fileName.IsEmpty()) fileName = "/index";
 
-                using StreamReader file = File.OpenText("Pages/test.html");
-                string text = file.ReadToEnd();
-                response.SendResponseAndClose(text);
+                //using StreamReader file = File.OpenText("Pages/test.html");
+                //string text = file.ReadToEnd();
+
+                //response.SendResponseAndClose(text);
             }
+        }
 
-            Console.WriteLine("------------------------");
+        private bool TryFindRouter(ReadOnlySpan<char> route, out BaseRouteHandler? handler)
+        {
+            handler = null;
+            return false;
+        }
+
+        internal static void SendErrorResponse(HttpListenerResponse response, ErrorCode code, string message, bool headOnly)
+        {
+            response.StatusCode = ((int)code);
+
+            string errorPagePath = Path.Combine(ROOT_PATH, ERROR_PAGE);
+            using StreamReader stream = File.OpenText(errorPagePath);
+            string page = stream.ReadToEnd();
+
+            page = page.Replace(ERROR_TYPE_TOKEN, $"{((int)code)} - {code}");
+            page = page.Replace(ERROR_MESSAGE_TOKEN, message);
+
+            response.SendHTMLAndClose(page, headOnly);
         }
     }
 }

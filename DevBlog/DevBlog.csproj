@@ -10,10 +10,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Update="Pages\index.html">
+    <None Update="Root\error.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Pages\test.html">
+    <None Update="Root\index.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Root\test.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
