@@ -45,34 +45,34 @@ namespace DevBlog
 
         internal static void HTMLRequestHandler(HttpListenerResponse response, string path, bool headOnly)
         {
-            HandleTextRequest(response, path, headOnly, "text/html");
+            HandleTextRequest(response, path, headOnly, "text/html; charset=utf-8");
         }
 
         internal static void PlainTextRequestHandler(HttpListenerResponse response, string path, bool headOnly)
         {
-            HandleTextRequest(response, path, headOnly, "text/plain");
+            HandleTextRequest(response, path, headOnly, "text/plain; charset=utf-8");
         }
 
         internal static void JavascriptRequestHandler(HttpListenerResponse response, string path, bool headOnly)
         {
-            HandleTextRequest(response, path, headOnly, "text/javascript");
+            HandleTextRequest(response, path, headOnly, "text/javascript; charset=utf-8");
         }
 
         internal static void CSSRequestHandler(HttpListenerResponse response, string path, bool headOnly)
         {
-            HandleTextRequest(response, path, headOnly, "text/css");
+            HandleTextRequest(response, path, headOnly, "text/css; charset=utf-8");
         }
 
         internal static void MarkdownRequestHandler(HttpListenerResponse response, string path, bool headOnly)
         {
-            HandleTextRequest(response, path, headOnly, "text/markdown");
+            HandleTextRequest(response, path, headOnly, "text/markdown; charset=utf-8");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void HandleBinaryRequest(HttpListenerResponse response, string path, bool headOnly, string mime)
         {
             byte[] data = File.ReadAllBytes(path);
-            response.SendResponseAndClose(mime, data, headOnly);
+            Server.SendBody(response, mime, data, headOnly);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -83,7 +83,7 @@ namespace DevBlog
 
             byte[] data = Encoding.UTF8.GetBytes(text);
 
-            response.SendResponseAndClose(mime, data, headOnly, encoding: Encoding.UTF8);
+            Server.SendBody(response, mime, data, headOnly, encoding: Encoding.UTF8);
         }
     }
 }

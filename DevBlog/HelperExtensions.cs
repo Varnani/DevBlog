@@ -1,6 +1,4 @@
-﻿using System.Net;
-using System.Runtime.CompilerServices;
-using System.Text;
+﻿using System.Runtime.CompilerServices;
 
 namespace DevBlog
 {
@@ -20,26 +18,6 @@ namespace DevBlog
             int index = str.IndexOf(c);
             if (index == -1) return string.Empty;
             return str.Substring(index + 1);
-        }
-
-        internal static void SendHTMLAndClose(this HttpListenerResponse response, string html, bool headOnly)
-        {
-            byte[] data = Encoding.UTF8.GetBytes(html);
-            response.SendResponseAndClose("text/html", data, headOnly, encoding: Encoding.UTF8);
-        }
-
-        internal static void SendResponseAndClose(this HttpListenerResponse response, string mime, byte[] data, bool headOnly, Encoding? encoding = null)
-        {
-            response.ContentEncoding = encoding;
-            response.ContentType = mime;
-            response.ContentLength64 = data.Length;
-
-            if (!headOnly)
-            {
-                response.OutputStream.Write(data, 0, data.Length);
-            }
-
-            response.OutputStream.Close();
         }
     }
 }

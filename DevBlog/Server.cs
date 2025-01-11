@@ -1,11 +1,16 @@
 ﻿using System.Collections.Specialized;
+using System.IO.Compression;
 using System.Net;
+using System.Text;
 using System.Web;
 
 namespace DevBlog
 {
     internal class Server
     {
+        // TODO: implement a config system
+        private const bool SEND_GZIP = true;
+
         private const string LISTEN_ADDR = "http://127.0.0.1:2525/";
         private const int MAX_HANDLERS = 32;
 
@@ -56,7 +61,39 @@ namespace DevBlog
             Console.WriteLine("Server closed. Bye!");
         }
 
-        internal static void SendErrorResponse(HttpListenerResponse response, ErrorCode code, string message, bool headOnly)
+        internal static void SendBody(HttpListenerResponse response, string mime, byte[] data, bool headOnly, Encoding? encoding = null)
+        {
+            if (SEND_GZIP)
+            {
+                using MemoryStream compressed = new();
+                using GZipStream zip = new(compressed, CompressionMode.Compress);
+                zip.Write(data, 0, data.Length);
+                zip.Flush();
+
+                data = compressed.ToArray();
+
+                response.AddHeader("Content-Encoding", "gzip");
+            }
+
+            response.ContentEncoding = encoding;
+            response.ContentType = mime;
+            response.ContentLength64 = data.Length;
+
+            if (!headOnly)
+            {
+                response.OutputStream.Write(data, 0, data.Length);
+            }
+
+            response.OutputStream.Close();
+        }
+
+        internal static void SendHTML(HttpListenerResponse response, string html, bool headOnly)
+        {
+            byte[] data = Encoding.UTF8.GetBytes(html);
+            SendBody(response, "text/html; charset=utf-8", data, headOnly, encoding: Encoding.UTF8);
+        }
+
+        internal static void SendError(HttpListenerResponse response, ErrorCode code, string message, bool headOnly)
         {
             response.StatusCode = ((int)code);
 
@@ -67,7 +104,7 @@ namespace DevBlog
             page = page.Replace(ERROR_TYPE_TOKEN, $"{((int)code)} - {code}");
             page = page.Replace(ERROR_MESSAGE_TOKEN, message);
 
-            response.SendHTMLAndClose(page, headOnly);
+            SendHTML(response, page, headOnly);
         }
 
         private void ServerLoop()
@@ -134,14 +171,14 @@ namespace DevBlog
 
             if (method != HttpMethod.Get && method != HttpMethod.Head)
             {
-                SendErrorResponse(response, ErrorCode.NotImplemented, $"HTTP Method {request.HttpMethod} is not supported.", false);
+                SendError(response, ErrorCode.NotImplemented, $"HTTP Method {request.HttpMethod} is not supported.", false);
             }
 
             bool isHeadOnly = method == HttpMethod.Head;
 
             if (request.RawUrl == null)
             {
-                SendErrorResponse(response, ErrorCode.Internal, "Internal server error.", false);
+                SendError(response, ErrorCode.Internal, "Internal server error.", false);
             }
 
             else
@@ -176,7 +213,7 @@ namespace DevBlog
 
                     if (!File.Exists(path))
                     {
-                        SendErrorResponse(response, ErrorCode.NotFound, "Content not found.", isHeadOnly);
+                        SendError(response, ErrorCode.NotFound, "Content not found.", isHeadOnly);
                         return;
                     }
 
@@ -189,13 +226,13 @@ namespace DevBlog
 
                         catch (Exception)
                         {
-                            SendErrorResponse(response, ErrorCode.Internal, "Internal server error.", isHeadOnly);
+                            SendError(response, ErrorCode.Internal, "Internal server error.", isHeadOnly);
                         }
                     }
 
                     else
                     {
-                        SendErrorResponse(response, ErrorCode.Unavailable, "Content unavailable.", isHeadOnly);
+                        SendError(response, ErrorCode.Unavailable, "Content unavailable.", isHeadOnly);
                     }
                 }
             }
