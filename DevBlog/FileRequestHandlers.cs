@@ -16,8 +16,32 @@ namespace DevBlog
             { "css", CSSRequestHandler },
             { "md", MarkdownRequestHandler },
 
-
+            { "jpg", JPGRequestHandler},
+            { "jpeg", JPGRequestHandler},
+            { "gif", GIFRequestHandler},
+            { "png", PNGRequestHandler},
+            { "ico", ICORequestHandler }
         };
+
+        internal static void ICORequestHandler(HttpListenerResponse response, string path, bool headOnly)
+        {
+            HandleBinaryRequest(response, path, headOnly, "image/vnd.microsoft.icon");
+        }
+
+        internal static void JPGRequestHandler(HttpListenerResponse response, string path, bool headOnly)
+        {
+            HandleBinaryRequest(response, path, headOnly, "image/jpeg");
+        }
+
+        internal static void PNGRequestHandler(HttpListenerResponse response, string path, bool headOnly)
+        {
+            HandleBinaryRequest(response, path, headOnly, "image/png");
+        }
+
+        internal static void GIFRequestHandler(HttpListenerResponse response, string path, bool headOnly)
+        {
+            HandleBinaryRequest(response, path, headOnly, "image/gif");
+        }
 
         internal static void HTMLRequestHandler(HttpListenerResponse response, string path, bool headOnly)
         {
@@ -41,7 +65,14 @@ namespace DevBlog
 
         internal static void MarkdownRequestHandler(HttpListenerResponse response, string path, bool headOnly)
         {
+            HandleTextRequest(response, path, headOnly, "text/markdown");
+        }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void HandleBinaryRequest(HttpListenerResponse response, string path, bool headOnly, string mime)
+        {
+            byte[] data = File.ReadAllBytes(path);
+            response.SendResponseAndClose(mime, data, headOnly);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

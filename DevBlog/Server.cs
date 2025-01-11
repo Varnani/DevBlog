@@ -6,10 +6,12 @@ namespace DevBlog
 {
     internal class Server
     {
-        private const string LISTEN_ADDR = $"http://127.0.0.1:2525/";
+        private const string LISTEN_ADDR = "http://127.0.0.1:2525/";
         private const int MAX_HANDLERS = 32;
 
         private const string ROOT_PATH = "Root";
+        private const string SPECIAL_PATH = "SpecialPages";
+
         private const string ERROR_PAGE = "error_template.html";
 
         private const string ERROR_TYPE_TOKEN = "%ERROR_TYPE%";
@@ -58,7 +60,7 @@ namespace DevBlog
         {
             response.StatusCode = ((int)code);
 
-            string errorPagePath = Path.Combine(ROOT_PATH, ERROR_PAGE);
+            string errorPagePath = Path.Combine(SPECIAL_PATH, ERROR_PAGE);
             using StreamReader stream = File.OpenText(errorPagePath);
             string page = stream.ReadToEnd();
 
