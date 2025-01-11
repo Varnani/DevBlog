@@ -9,6 +9,9 @@ namespace DevBlog
     internal class Server
     {
         // TODO: implement a config system
+        // TOOD: implement a rate limiting system
+        // TODO: prevent exposing raw HttpListenerResponse object
+
         private const bool SEND_GZIP = true;
 
         private const string LISTEN_ADDR = "http://127.0.0.1:2525/";
@@ -59,6 +62,11 @@ namespace DevBlog
             serverLoopTask?.Wait();
 
             Console.WriteLine("Server closed. Bye!");
+        }
+
+        internal void AddRoute(string route, BaseRouteHandler handler)
+        {
+            routerDict.Add(route, handler);
         }
 
         internal static void SendBody(HttpListenerResponse response, string mime, byte[] data, bool headOnly, Encoding? encoding = null)

@@ -28,6 +28,9 @@
     <None Update="Root\index.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Root\styles.css">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Root\test.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
