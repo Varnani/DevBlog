@@ -10,6 +10,7 @@ namespace DevBlog
     {
         // TODO: implement a config system
         // TOOD: implement a rate limiting system
+        // TODO: implement a log system
 
         private const bool SEND_GZIP = true;
 
@@ -42,9 +43,10 @@ namespace DevBlog
             if (Started) return;
             Started = true;
 
+            cancelToken = false;
+
             Console.WriteLine("Starting server...");
 
-            cancelToken = false;
             serverLoopTask = Task.Run(() =>
             {
                 ServerLoop();
@@ -210,7 +212,7 @@ namespace DevBlog
             }
         }
 
-        private ResponseParams GenerateErrorResponse(HttpStatusCode error, string message)
+        private static ResponseParams GenerateErrorResponse(HttpStatusCode error, string message)
         {
             string errorPagePath = Path.Combine(SPECIAL_PATH, ERROR_PAGE);
             using StreamReader stream = File.OpenText(errorPagePath);
@@ -232,7 +234,7 @@ namespace DevBlog
             return response;
         }
 
-        private void SendResponse(ResponseParams responseParams, HttpListenerRequest request, HttpListenerResponse response, bool headOnly)
+        private static void SendResponse(ResponseParams responseParams, HttpListenerRequest request, HttpListenerResponse response, bool headOnly)
         {
             if (responseParams.data == null) responseParams.data = [];
 
