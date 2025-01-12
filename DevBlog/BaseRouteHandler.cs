@@ -1,5 +1,4 @@
 ﻿using System.Collections.Specialized;
-using System.Net;
 
 namespace DevBlog
 {
@@ -7,7 +6,7 @@ namespace DevBlog
     {
         private string route = string.Empty;
 
-        public string Route
+        internal string Route
         {
             get => route;
             private set => route = value;
@@ -15,9 +14,9 @@ namespace DevBlog
 
         protected BaseRouteHandler(string route)
         {
-            this.Route = route;
+            Route = route;
         }
 
-        internal abstract void HandleResponse(HttpListenerResponse response, NameValueCollection parameters, bool headOnly);
+        internal abstract ResponseParams HandleResponse(NameValueCollection parameters);
     }
 }

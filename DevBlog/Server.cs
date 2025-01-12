@@ -10,7 +10,6 @@ namespace DevBlog
     {
         // TODO: implement a config system
         // TOOD: implement a rate limiting system
-        // TODO: prevent exposing raw HttpListenerResponse object
 
         private const bool SEND_GZIP = true;
 
@@ -32,7 +31,7 @@ namespace DevBlog
 
         private Dictionary<string, BaseRouteHandler> routerDict = new();
 
-        public bool Started
+        internal bool Started
         {
             get => started;
             private set => started = value;
@@ -64,55 +63,9 @@ namespace DevBlog
             Console.WriteLine("Server closed. Bye!");
         }
 
-        internal void AddRoute(string route, BaseRouteHandler handler)
+        internal void AddRoute(BaseRouteHandler handler)
         {
-            routerDict.Add(route, handler);
-        }
-
-        internal static void SendBody(HttpListenerResponse response, string mime, byte[] data, bool headOnly, Encoding? encoding = null)
-        {
-            if (SEND_GZIP)
-            {
-                using MemoryStream compressed = new();
-                using GZipStream zip = new(compressed, CompressionMode.Compress);
-                zip.Write(data, 0, data.Length);
-                zip.Flush();
-
-                data = compressed.ToArray();
-
-                response.AddHeader("Content-Encoding", "gzip");
-            }
-
-            response.ContentEncoding = encoding;
-            response.ContentType = mime;
-            response.ContentLength64 = data.Length;
-
-            if (!headOnly)
-            {
-                response.OutputStream.Write(data, 0, data.Length);
-            }
-
-            response.OutputStream.Close();
-        }
-
-        internal static void SendHTML(HttpListenerResponse response, string html, bool headOnly)
-        {
-            byte[] data = Encoding.UTF8.GetBytes(html);
-            SendBody(response, "text/html; charset=utf-8", data, headOnly, encoding: Encoding.UTF8);
-        }
-
-        internal static void SendError(HttpListenerResponse response, ErrorCode code, string message, bool headOnly)
-        {
-            response.StatusCode = ((int)code);
-
-            string errorPagePath = Path.Combine(SPECIAL_PATH, ERROR_PAGE);
-            using StreamReader stream = File.OpenText(errorPagePath);
-            string page = stream.ReadToEnd();
-
-            page = page.Replace(ERROR_TYPE_TOKEN, $"{((int)code)} - {code}");
-            page = page.Replace(ERROR_MESSAGE_TOKEN, message);
-
-            SendHTML(response, page, headOnly);
+            routerDict.Add(handler.Route, handler);
         }
 
         private void ServerLoop()
@@ -176,74 +129,145 @@ namespace DevBlog
             Console.WriteLine("------------------------");
 
             HttpMethod method = new(request.HttpMethod);
+            bool headOnly = method == HttpMethod.Head;
 
-            if (method != HttpMethod.Get && method != HttpMethod.Head)
+            try
             {
-                SendError(response, ErrorCode.NotImplemented, $"HTTP Method {request.HttpMethod} is not supported.", false);
-            }
+                if (method != HttpMethod.Get && method != HttpMethod.Head)
+                {
+                    ResponseParams responseParams = GenerateErrorResponse(HttpStatusCode.NotImplemented, $"HTTP Method {request.HttpMethod} is not supported.");
+                    SendResponse(responseParams, request, response, headOnly);
+                    return;
+                }
 
-            bool isHeadOnly = method == HttpMethod.Head;
+                string route;
+                string query;
 
-            if (request.RawUrl == null)
-            {
-                SendError(response, ErrorCode.Internal, "Internal server error.", false);
-            }
+                if (request.RawUrl == null)
+                {
+                    route = "/";
+                    query = string.Empty;
+                }
 
-            else
-            {
-                string route = request.RawUrl.LeftOf('?');
-                string query = request.RawUrl.RightOf('?');
+                else
+                {
+                    route = request.RawUrl.LeftOf('?');
+                    query = request.RawUrl.RightOf('?');
+                }
 
                 NameValueCollection parameters = HttpUtility.ParseQueryString(query);
 
                 if (routerDict.TryGetValue(route, out BaseRouteHandler? handler))
                 {
-                    handler!.HandleResponse(response, parameters, isHeadOnly);
+                    ResponseParams responseParams = handler!.HandleResponse(parameters);
+                    SendResponse(responseParams, request, response, headOnly);
+                    return;
+                }
+
+                // there aren't any handlers for the requested route. 
+                // we'll try to serve a file instead.
+
+                string file = route.LeftOf('.');
+                string extension = route.RightOf('.');
+
+                if (string.IsNullOrWhiteSpace(extension)) extension = "html";
+                if (file == "/" || string.IsNullOrWhiteSpace(file)) file = "/index";
+
+                if (file[^1] == '/')
+                {
+                    file += "index";
+                }
+
+                string path = $"{ROOT_PATH}{file}.{extension}";
+
+                if (!File.Exists(path))
+                {
+                    ResponseParams responseParams = GenerateErrorResponse(HttpStatusCode.NotFound, "Content not found.");
+                    SendResponse(responseParams, request, response, headOnly);
+                    return;
+                }
+
+                if (FileRequestHandlers.Handlers.TryGetValue(extension, out FileRequestHandlers.HandlerDelegate? serveHandler))
+                {
+                    ResponseParams responseParams = serveHandler!.Invoke(path);
+                    SendResponse(responseParams, request, response, headOnly);
                 }
 
                 else
                 {
-                    // there aren't any handlers for requested route. 
-                    // we'll try to serve a file instead.
+                    ResponseParams responseParams = GenerateErrorResponse(HttpStatusCode.ServiceUnavailable, "Content unavailable.");
+                    SendResponse(responseParams, request, response, headOnly);
+                    return;
+                }
+            }
 
-                    string file = route.LeftOf('.');
-                    string extension = route.RightOf('.');
+            catch (Exception)
+            {
+                ResponseParams responseParams = GenerateErrorResponse(HttpStatusCode.InternalServerError, "An internal server error occured.");
+                SendResponse(responseParams, request, response, headOnly);
 
-                    if (string.IsNullOrWhiteSpace(extension)) extension = "html";
-                    if (file == "/" || string.IsNullOrWhiteSpace(file)) file = "/index";
+                throw;
+            }
+        }
 
-                    if (file[^1] == '/')
+        private ResponseParams GenerateErrorResponse(HttpStatusCode error, string message)
+        {
+            string errorPagePath = Path.Combine(SPECIAL_PATH, ERROR_PAGE);
+            using StreamReader stream = File.OpenText(errorPagePath);
+            string page = stream.ReadToEnd();
+
+            page = page.Replace(ERROR_TYPE_TOKEN, $"{((int)error)} - {error}");
+            page = page.Replace(ERROR_MESSAGE_TOKEN, message);
+
+            byte[] data = Encoding.UTF8.GetBytes(page);
+
+            ResponseParams response = new()
+            {
+                code = error,
+                mime = "text/html; charset=utf-8",
+                data = data,
+                encoding = Encoding.UTF8
+            };
+
+            return response;
+        }
+
+        private void SendResponse(ResponseParams responseParams, HttpListenerRequest request, HttpListenerResponse response, bool headOnly)
+        {
+            if (responseParams.data == null) responseParams.data = [];
+
+            if (SEND_GZIP)
+            {
+                string? acceptedEncodings = request.Headers["Accept-Encoding"];
+
+                if (acceptedEncodings != null)
+                {
+                    if (acceptedEncodings.Contains("gzip"))
                     {
-                        file += "index";
-                    }
+                        using MemoryStream compressed = new();
+                        using GZipStream zip = new(compressed, CompressionMode.Compress);
 
-                    string path = $"{ROOT_PATH}{file}.{extension}";
+                        zip.Write(responseParams.data, 0, responseParams.data.Length);
+                        zip.Flush();
 
-                    if (!File.Exists(path))
-                    {
-                        SendError(response, ErrorCode.NotFound, "Content not found.", isHeadOnly);
-                        return;
-                    }
+                        responseParams.data = compressed.ToArray();
 
-                    if (FileRequestHandlers.Handlers.TryGetValue(extension, out FileRequestHandlers.HandlerDelegate? serveHandler))
-                    {
-                        try
-                        {
-                            serveHandler!.Invoke(response, path, isHeadOnly);
-                        }
-
-                        catch (Exception)
-                        {
-                            SendError(response, ErrorCode.Internal, "Internal server error.", isHeadOnly);
-                        }
-                    }
-
-                    else
-                    {
-                        SendError(response, ErrorCode.Unavailable, "Content unavailable.", isHeadOnly);
+                        response.AddHeader("Content-Encoding", "gzip");
                     }
                 }
             }
+
+            response.StatusCode = ((int)responseParams.code);
+            response.ContentEncoding = responseParams.encoding;
+            response.ContentType = responseParams.mime;
+            response.ContentLength64 = responseParams.data.Length;
+
+            if (!headOnly)
+            {
+                response.OutputStream.Write(responseParams.data, 0, responseParams.data.Length);
+            }
+
+            response.OutputStream.Close();
         }
     }
 }
