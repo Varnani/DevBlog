@@ -44,7 +44,7 @@ namespace DevBlog
 
         internal static ResponseParams HTMLRequestHandler(string path)
         {
-            return HandleTextRequest(path, "text/html; charset=utf-8");
+            return HandleTextRequest(path, Server.HTML_MIME);
         }
 
         internal static ResponseParams PlainTextRequestHandler(string path)

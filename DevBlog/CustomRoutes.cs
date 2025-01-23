@@ -1,4 +1,6 @@
-﻿using System.Collections.Specialized;
+﻿using Markdig;
+using System.Collections.Specialized;
+using System.Net;
 using System.Text;
 
 namespace DevBlog
@@ -21,7 +23,14 @@ namespace DevBlog
 
     internal class PostRouteHandler : BaseRouteHandler
     {
-        public PostRouteHandler() : base("/post") { }
+        private readonly MarkdownPipeline pipeline;
+
+        public PostRouteHandler() : base("/post")
+        {
+            pipeline = new MarkdownPipelineBuilder()
+                .UseAdvancedExtensions()
+                .Build();
+        }
 
         internal override ResponseParams HandleResponse(NameValueCollection parameters)
         {
@@ -29,29 +38,27 @@ namespace DevBlog
 
             if (value == null)
             {
-                ResponseParams response = Server.GenerateErrorResponse(System.Net.HttpStatusCode.BadRequest, "Post id is missing.");
-                return response;
+                ResponseParams error = Server.GenerateErrorResponse(HttpStatusCode.BadRequest, "Post id parameter is missing.");
+                return error;
             }
 
-            else
+            if (!int.TryParse(value, out int id))
             {
-                if (int.TryParse(value, out int id))
-                {
-                    ResponseParams response = new()
-                    {
-                        data = Encoding.UTF8.GetBytes($"post page for id {id}"),
-                        encoding = Encoding.UTF8
-                    };
-
-                    return response;
-                }
-
-                else
-                {
-                    ResponseParams response = Server.GenerateErrorResponse(System.Net.HttpStatusCode.BadRequest, "Post id is malformed.");
-                    return response;
-                }
+                ResponseParams error = Server.GenerateErrorResponse(HttpStatusCode.BadRequest, "Post id parameter is malformed.");
+                return error;
             }
+
+            string result = Markdown.ToHtml($"If this is in *italics*, that means markdig is working. Yay! Also, the post id is {id}.",
+                pipeline: pipeline);
+
+            ResponseParams response = new()
+            {
+                mime = Server.HTML_MIME,
+                data = Encoding.UTF8.GetBytes(result),
+                encoding = Encoding.UTF8
+            };
+
+            return response;
         }
     }
 }

@@ -12,6 +12,8 @@ namespace DevBlog
         // TOOD: implement a rate limiting system
         // TODO: implement a log system
 
+        public const string HTML_MIME = "text/html; charset=utf-8";
+
         private const bool SEND_GZIP = true;
 
         private const string LISTEN_ADDR = "http://127.0.0.1:2525/";
@@ -233,7 +235,7 @@ namespace DevBlog
             ResponseParams response = new()
             {
                 code = error,
-                mime = "text/html; charset=utf-8",
+                mime = HTML_MIME,
                 data = data,
                 encoding = Encoding.UTF8
             };
