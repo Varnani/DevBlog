@@ -81,28 +81,35 @@ namespace DevBlog
 
             List<Task> handlers = new(MAX_HANDLERS);
 
+            Task StartListenerTask()
+            {
+                Task<HttpListenerContext> ctx = listener.GetContextAsync();
+                Task handler = HandleHttpRequestAsync(ctx);
+
+                return handler;
+            }
+
+            for (int i = 0; i < MAX_HANDLERS; i++)
+            {
+                Task handler = StartListenerTask();
+                handlers.Add(handler);
+            }
+
             while (!cancelToken)
             {
-                while (handlers.Count < MAX_HANDLERS)
-                {
-                    Task<HttpListenerContext> ctx = listener.GetContextAsync();
-                    Task handler = HandleHttpRequestAsync(ctx);
-                    handlers.Add(handler);
-                }
-
                 for (int i = 0; i < handlers.Count;)
                 {
                     Task task = handlers[i];
 
                     if (task.IsCompleted)
                     {
-                        handlers.Remove(task);
-
                         if (task.Status == TaskStatus.Faulted)
                         {
                             Console.WriteLine("A handler was faulted.");
                             Console.WriteLine(task.Exception);
                         }
+
+                        handlers[i] = StartListenerTask();
                     }
 
                     else
@@ -111,7 +118,7 @@ namespace DevBlog
                     }
                 }
 
-                Thread.Sleep(250);
+                Thread.Sleep(100);
             }
 
             Console.WriteLine("Stopping server...");
