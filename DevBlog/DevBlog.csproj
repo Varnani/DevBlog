@@ -14,9 +14,22 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Root\styles.css">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="SpecialPages\error_template.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="SpecialPages\post_template.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="SpecialPages\test_markdown.md">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Root\Posts\" />
   </ItemGroup>
 
 </Project>

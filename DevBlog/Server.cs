@@ -14,13 +14,13 @@ namespace DevBlog
 
         public const string HTML_MIME = "text/html; charset=utf-8";
 
+        public const string SPECIAL_PATH = "SpecialPages";
+        public const string ROOT_PATH = "Root";
+
         private const bool SEND_GZIP = true;
 
         private const string LISTEN_ADDR = "http://127.0.0.1:2525/";
         private const int MAX_HANDLERS = 32;
-
-        private const string ROOT_PATH = "Root";
-        private const string SPECIAL_PATH = "SpecialPages";
 
         private const string ERROR_PAGE = "error_template.html";
 

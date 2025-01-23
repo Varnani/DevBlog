@@ -1,5 +1,6 @@
 ﻿using Markdig;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Net;
 using System.Text;
 
@@ -48,17 +49,83 @@ namespace DevBlog
                 return error;
             }
 
-            string result = Markdown.ToHtml($"If this is in *italics*, that means markdig is working. Yay! Also, the post id is {id}.",
-                pipeline: pipeline);
-
-            ResponseParams response = new()
+            if (id < -1)
             {
-                mime = Server.HTML_MIME,
-                data = Encoding.UTF8.GetBytes(result),
-                encoding = Encoding.UTF8
-            };
+                ResponseParams error = Server.GenerateErrorResponse(HttpStatusCode.BadRequest, "Post id parameter is malformed.");
+                return error;
+            }
 
-            return response;
+            string? mdPath = null;
+
+            if (id == -1)
+            {
+                mdPath = Path.Combine(Server.SPECIAL_PATH, "test_markdown.md");
+            }
+
+            else
+            {
+                DirectoryInfo info = new(Path.Combine(Server.ROOT_PATH, "Posts/"));
+                FileInfo[] files = info.GetFiles();
+
+                if (id < files.Length)
+                {
+                    Array.Sort(files, (FileInfo file1, FileInfo file2) =>
+                    {
+                        return file1.CreationTime.CompareTo(file2.CreationTime);
+                    });
+
+                    mdPath = files[id].FullName;
+                }
+            }
+
+            if (mdPath is null)
+            {
+                ResponseParams error = Server.GenerateErrorResponse(HttpStatusCode.NotFound, "Post not found.");
+                return error;
+            }
+
+            else
+            {
+                string htmlPath = Path.Combine(Server.SPECIAL_PATH, "post_template.html");
+                using StreamReader htmlStream = File.OpenText(htmlPath);
+                string html = htmlStream.ReadToEnd();
+
+                using StreamReader mdStream = File.OpenText(mdPath);
+                string markdown = mdStream.ReadToEnd();
+
+                string result;
+
+                lock (pipeline)
+                {
+                    if (id == -1)
+                    {
+                        Stopwatch stopWatch = System.Diagnostics.Stopwatch.StartNew();
+
+                        result = Markdown.ToHtml(markdown, pipeline: pipeline);
+
+                        stopWatch.Stop();
+                        TimeSpan elapsed = stopWatch.Elapsed;
+
+                        result = result.Replace("%MD_RENDER_TIME%", elapsed.TotalSeconds.ToString());
+                    }
+
+                    else
+                    {
+                        result = Markdown.ToHtml(markdown, pipeline: pipeline);
+                    }
+                }
+
+                html = html.Replace("%POST_CONTENT%", result);
+
+                ResponseParams response = new()
+                {
+                    mime = Server.HTML_MIME,
+                    data = Encoding.UTF8.GetBytes(html),
+                    encoding = Encoding.UTF8
+                };
+
+                return response;
+            }
         }
     }
 }
