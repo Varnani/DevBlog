@@ -2,19 +2,14 @@
 
 namespace DevBlog
 {
-    internal abstract class BaseRouteHandler
+    internal abstract class BaseRouteHandler(string route)
     {
-        private string route = string.Empty;
+        private string route = route;
 
         internal string Route
         {
             get => route;
             private set => route = value;
-        }
-
-        protected BaseRouteHandler(string route)
-        {
-            Route = route;
         }
 
         internal abstract ResponseParams HandleResponse(NameValueCollection parameters);

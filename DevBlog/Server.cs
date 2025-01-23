@@ -219,7 +219,7 @@ namespace DevBlog
             }
         }
 
-        private static ResponseParams GenerateErrorResponse(HttpStatusCode error, string message)
+        internal static ResponseParams GenerateErrorResponse(HttpStatusCode error, string message)
         {
             string errorPagePath = Path.Combine(SPECIAL_PATH, ERROR_PAGE);
             using StreamReader stream = File.OpenText(errorPagePath);
