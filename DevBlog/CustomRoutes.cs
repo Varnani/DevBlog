@@ -87,6 +87,7 @@ namespace DevBlog
             else
             {
                 string htmlPath = Path.Combine(Server.SPECIAL_PATH, "post_template.html");
+
                 using StreamReader htmlStream = File.OpenText(htmlPath);
                 string html = htmlStream.ReadToEnd();
 
@@ -116,6 +117,7 @@ namespace DevBlog
                 }
 
                 html = html.Replace("%POST_CONTENT%", result);
+                html = html.Replace("%CURRENT_YEAR%", DateTime.Now.Year.ToString());
 
                 ResponseParams response = new()
                 {

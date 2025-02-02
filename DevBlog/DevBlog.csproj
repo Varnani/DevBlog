@@ -30,6 +30,7 @@
 
   <ItemGroup>
     <Folder Include="Root\Posts\" />
+    <Folder Include="Root\Posts\" />
   </ItemGroup>
 
 </Project>
