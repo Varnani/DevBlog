@@ -1,4 +1,6 @@
-﻿namespace DevBlog
+﻿using Markdig;
+
+namespace DevBlog
 {
     internal static class Program
     {
@@ -15,8 +17,12 @@
 
         private static void RegisterRoutes(Server server)
         {
-            HomepageRouteHandler homepageHandler = new();
-            PostRouteHandler postHandler = new();
+            MarkdownPipeline pipeline = new MarkdownPipelineBuilder()
+                .UseAdvancedExtensions()
+                .Build();
+
+            HomepageRouteHandler homepageHandler = new(pipeline);
+            PostRouteHandler postHandler = new(pipeline);
 
             server.AddRoute(homepageHandler);
             server.AddRoute(postHandler);

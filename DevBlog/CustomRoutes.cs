@@ -8,13 +8,57 @@ namespace DevBlog
 {
     internal class HomepageRouteHandler : BaseRouteHandler
     {
-        public HomepageRouteHandler() : base("/") { }
+        private readonly MarkdownPipeline pipeline;
+
+        public HomepageRouteHandler(MarkdownPipeline pipeline) : base("/")
+        {
+            this.pipeline = pipeline;
+        }
 
         internal override ResponseParams HandleResponse(NameValueCollection parameters)
         {
+            FileInfo[] files = RouteHelpers.GetPostFiles();
+
+            StringBuilder postListBuilder = new();
+
+            postListBuilder.AppendLine();
+            postListBuilder.AppendLine();
+
+            for (int i = 0; i < files.Length; i++)
+            {
+                FileInfo file = files[i];
+
+                string title = file.Name;
+                title = title.Replace('-', ' ');
+
+                DateTime date = file.CreationTimeUtc;
+
+                string entry = $"{date} - {title}";
+                postListBuilder.AppendLine(entry);
+
+                postListBuilder.AppendLine("  ");
+            }
+
+            string htmlPath = Path.Combine(Server.SPECIAL_PATH, "post_template.html");
+            using StreamReader htmlStream = File.OpenText(htmlPath);
+            string html = htmlStream.ReadToEnd();
+
+            StringBuilder htmlBuilder = new(html);
+
+            string content;
+
+            lock (pipeline)
+            {
+                content = Markdown.ToHtml(postListBuilder.ToString(), pipeline);
+            }
+
+            RouteHelpers.InsertPostContent(htmlBuilder, content);
+            RouteHelpers.InsertCurrentYear(htmlBuilder);
+
             ResponseParams response = new()
             {
-                data = Encoding.UTF8.GetBytes("home page"),
+                mime = Server.HTML_MIME,
+                data = Encoding.UTF8.GetBytes(htmlBuilder.ToString()),
                 encoding = Encoding.UTF8
             };
 
@@ -26,11 +70,9 @@ namespace DevBlog
     {
         private readonly MarkdownPipeline pipeline;
 
-        public PostRouteHandler() : base("/post")
+        public PostRouteHandler(MarkdownPipeline pipeline) : base("/post")
         {
-            pipeline = new MarkdownPipelineBuilder()
-                .UseAdvancedExtensions()
-                .Build();
+            this.pipeline = pipeline;
         }
 
         internal override ResponseParams HandleResponse(NameValueCollection parameters)
@@ -64,8 +106,7 @@ namespace DevBlog
 
             else
             {
-                DirectoryInfo info = new(Path.Combine(Server.ROOT_PATH, "Posts/"));
-                FileInfo[] files = info.GetFiles();
+                FileInfo[] files = RouteHelpers.GetPostFiles();
 
                 if (id < files.Length)
                 {
@@ -94,7 +135,7 @@ namespace DevBlog
                 using StreamReader mdStream = File.OpenText(mdPath);
                 string markdown = mdStream.ReadToEnd();
 
-                string result;
+                string content;
 
                 lock (pipeline)
                 {
@@ -102,32 +143,63 @@ namespace DevBlog
                     {
                         Stopwatch stopWatch = System.Diagnostics.Stopwatch.StartNew();
 
-                        result = Markdown.ToHtml(markdown, pipeline: pipeline);
+                        content = Markdown.ToHtml(markdown, pipeline: pipeline);
 
                         stopWatch.Stop();
                         TimeSpan elapsed = stopWatch.Elapsed;
 
-                        result = result.Replace("%MD_RENDER_TIME%", elapsed.TotalSeconds.ToString());
+                        content = content.Replace("%MD_RENDER_TIME%", elapsed.TotalSeconds.ToString());
                     }
 
                     else
                     {
-                        result = Markdown.ToHtml(markdown, pipeline: pipeline);
+                        content = Markdown.ToHtml(markdown, pipeline: pipeline);
                     }
                 }
 
-                html = html.Replace("%POST_CONTENT%", result);
-                html = html.Replace("%CURRENT_YEAR%", DateTime.Now.Year.ToString());
+                StringBuilder htmlBuilder = new(html);
+                RouteHelpers.InsertPostContent(htmlBuilder, content);
+                RouteHelpers.InsertCurrentYear(htmlBuilder);
 
                 ResponseParams response = new()
                 {
                     mime = Server.HTML_MIME,
-                    data = Encoding.UTF8.GetBytes(html),
+                    data = Encoding.UTF8.GetBytes(htmlBuilder.ToString()),
                     encoding = Encoding.UTF8
                 };
 
                 return response;
             }
+        }
+    }
+
+    internal static class RouteHelpers
+    {
+        internal static FileInfo[] GetPostFiles()
+        {
+            DirectoryInfo info = new(Path.Combine(Server.ROOT_PATH, "Posts/"));
+            FileInfo[] files = info.GetFiles();
+
+            return files;
+        }
+
+        internal static string GetPostTemplate()
+        {
+            string htmlPath = Path.Combine(Server.SPECIAL_PATH, "post_template.html");
+            using StreamReader htmlStream = File.OpenText(htmlPath);
+            string html = htmlStream.ReadToEnd();
+
+            return html;
+        }
+
+        internal static void InsertPostContent(StringBuilder sb, string result)
+        {
+            sb.Replace("%POST_CONTENT%", result);
+        }
+
+        internal static void InsertCurrentYear(StringBuilder sb)
+        {
+            sb.Replace("%CURRENT_YEAR%", DateTime.Now.Year.ToString());
         }
     }
 }
