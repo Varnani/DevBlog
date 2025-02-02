@@ -21,7 +21,7 @@ namespace DevBlog.Helpers
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static string Capitalize(string str)
+        internal static string Capitalize(this string str)
         {
             return str; //TODO: implement this
         }

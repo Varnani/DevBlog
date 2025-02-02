@@ -21,33 +21,34 @@ namespace DevBlog.RouteHandlers
 
             StringBuilder postListBuilder = new();
 
-            postListBuilder.AppendLine();
-            postListBuilder.AppendLine();
-
             for (int i = 0; i < files.Length; i++)
             {
                 FileInfo file = files[i];
 
                 string title = file.Name;
+                title = title.LeftOf('.');
                 title = title.Replace('-', ' ');
+                title = title.Capitalize();
 
                 DateTime date = file.CreationTimeUtc;
 
-                string entry = $"{date} - {title}";
-                postListBuilder.AppendLine(entry);
-
-                postListBuilder.AppendLine("  ");
+                postListBuilder.AppendLine($"[{date} - {title}](/post?id={i})  ");
             }
 
-            string html = RouteHelpers.GetPostTemplate();
-            StringBuilder htmlBuilder = new(html);
+            string mdPath = Path.Combine(WebServer.SPECIAL_PATH, "home_content.md");
+            string markdown = RouteHelpers.LoadTextFile(mdPath);
+
+            markdown = markdown.Replace("%POST_LIST%", postListBuilder.ToString());
 
             string content;
 
             lock (pipeline)
             {
-                content = Markdown.ToHtml(postListBuilder.ToString(), pipeline);
+                content = Markdown.ToHtml(markdown, pipeline);
             }
+
+            string html = RouteHelpers.GetPostTemplate();
+            StringBuilder htmlBuilder = new(html);
 
             RouteHelpers.InsertPostContent(htmlBuilder, content);
             RouteHelpers.InsertCurrentYear(htmlBuilder);

@@ -12,11 +12,18 @@ namespace DevBlog.Helpers
             return files;
         }
 
+        internal static string LoadTextFile(string path)
+        {
+            using StreamReader stream = File.OpenText(path);
+            string content = stream.ReadToEnd();
+
+            return content;
+        }
+
         internal static string GetPostTemplate()
         {
             string htmlPath = Path.Combine(Server.WebServer.SPECIAL_PATH, "post_template.html");
-            using StreamReader htmlStream = File.OpenText(htmlPath);
-            string html = htmlStream.ReadToEnd();
+            string html = LoadTextFile(htmlPath);
 
             return html;
         }

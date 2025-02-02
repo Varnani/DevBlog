@@ -69,8 +69,7 @@ namespace DevBlog.RouteHandlers
 
             else
             {
-                using StreamReader mdStream = File.OpenText(mdPath);
-                string markdown = mdStream.ReadToEnd();
+                string markdown = RouteHelpers.LoadTextFile(mdPath);
 
                 string content;
 
