@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Text;
 
-namespace DevBlog
+namespace DevBlog.Server
 {
     internal struct ResponseParams
     {

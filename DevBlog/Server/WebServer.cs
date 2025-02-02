@@ -1,12 +1,14 @@
-﻿using System.Collections.Specialized;
+﻿using DevBlog.Helpers;
+using DevBlog.RouteHandlers;
+using System.Collections.Specialized;
 using System.IO.Compression;
 using System.Net;
 using System.Text;
 using System.Web;
 
-namespace DevBlog
+namespace DevBlog.Server
 {
-    internal class Server
+    internal class WebServer
     {
         // TODO: implement a config system
         // TOOD: implement a rate limiting system
@@ -14,8 +16,8 @@ namespace DevBlog
 
         public const string HTML_MIME = "text/html; charset=utf-8";
 
-        public const string SPECIAL_PATH = "SpecialPages";
-        public const string ROOT_PATH = "Root";
+        public const string SPECIAL_PATH = "www/SpecialPages";
+        public const string ROOT_PATH = "www/Root";
 
         private const bool SEND_GZIP = true;
 
@@ -227,7 +229,7 @@ namespace DevBlog
             using StreamReader stream = File.OpenText(errorPagePath);
             string page = stream.ReadToEnd();
 
-            page = page.Replace(ERROR_TYPE_TOKEN, $"{((int)error)} - {error}");
+            page = page.Replace(ERROR_TYPE_TOKEN, $"{(int)error} - {error}");
             page = page.Replace(ERROR_MESSAGE_TOKEN, message);
 
             byte[] data = Encoding.UTF8.GetBytes(page);
@@ -268,7 +270,7 @@ namespace DevBlog
                 }
             }
 
-            response.StatusCode = ((int)responseParams.code);
+            response.StatusCode = (int)responseParams.code;
             response.ContentEncoding = responseParams.encoding;
             response.ContentType = responseParams.mime;
             response.ContentLength64 = responseParams.data.Length;

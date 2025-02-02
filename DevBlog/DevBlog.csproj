@@ -14,29 +14,24 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Root\Posts\first-post.md">
+    <None Update="www\Root\Posts\first-post.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Root\Posts\second-post.md">
+    <None Update="www\Root\Posts\second-post.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Root\styles.css">
+    <None Update="www\Root\styles.css">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="SpecialPages\error_template.html">
+    <None Update="www\SpecialPages\error_template.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="SpecialPages\post_template.html">
+    <None Update="www\SpecialPages\post_template.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="SpecialPages\test_markdown.md">
+    <None Update="www\SpecialPages\test_markdown.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Root\Posts\" />
-    <Folder Include="Root\Posts\" />
   </ItemGroup>
 
 </Project>

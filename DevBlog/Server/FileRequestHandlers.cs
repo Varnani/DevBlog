@@ -1,7 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace DevBlog
+namespace DevBlog.Server
 {
     internal static class FileRequestHandlers
     {
@@ -44,7 +44,7 @@ namespace DevBlog
 
         internal static ResponseParams HTMLRequestHandler(string path)
         {
-            return HandleTextRequest(path, Server.HTML_MIME);
+            return HandleTextRequest(path, WebServer.HTML_MIME);
         }
 
         internal static ResponseParams PlainTextRequestHandler(string path)

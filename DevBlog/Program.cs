@@ -1,4 +1,6 @@
-﻿using Markdig;
+﻿using DevBlog.RouteHandlers;
+using DevBlog.Server;
+using Markdig;
 
 namespace DevBlog
 {
@@ -6,7 +8,7 @@ namespace DevBlog
     {
         static void Main(string[] _)
         {
-            Server server = new();
+            WebServer server = new();
 
             RegisterRoutes(server);
 
@@ -15,7 +17,7 @@ namespace DevBlog
             RunCommandLoop(server);
         }
 
-        private static void RegisterRoutes(Server server)
+        private static void RegisterRoutes(WebServer server)
         {
             MarkdownPipeline pipeline = new MarkdownPipelineBuilder()
                 .UseAdvancedExtensions()
@@ -28,7 +30,7 @@ namespace DevBlog
             server.AddRoute(postHandler);
         }
 
-        private static void RunCommandLoop(Server server)
+        private static void RunCommandLoop(WebServer server)
         {
             while (true)
             {

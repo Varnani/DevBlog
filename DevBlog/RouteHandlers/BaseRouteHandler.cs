@@ -1,6 +1,7 @@
-﻿using System.Collections.Specialized;
+﻿using DevBlog.Server;
+using System.Collections.Specialized;
 
-namespace DevBlog
+namespace DevBlog.RouteHandlers
 {
     internal abstract class BaseRouteHandler(string route)
     {

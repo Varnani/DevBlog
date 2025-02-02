@@ -1,8 +1,8 @@
 ﻿using System.Runtime.CompilerServices;
 
-namespace DevBlog
+namespace DevBlog.Helpers
 {
-    internal static class HelperExtensions
+    internal static class StringHelpers
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static string LeftOf(this string str, char c)
@@ -18,6 +18,12 @@ namespace DevBlog
             int index = str.IndexOf(c);
             if (index == -1) return string.Empty;
             return str.Substring(index + 1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static string Capitalize(string str)
+        {
+            return str; //TODO: implement this
         }
     }
 }
