@@ -26,10 +26,38 @@ namespace DevBlog
 
             server.Start();
 
-            while (true)
+            bool shouldExit = false;
+
             {
-                Console.ReadLine();
+                Console.CancelKeyPress += (sender, args) =>
+                {
+                    if (shouldExit) return;
+
+                    args.Cancel = true;
+                    shouldExit = true;
+                    Logger.Log("Received cancellation.", Logger.Level.Info);
+                };
+
+                AppDomain.CurrentDomain.ProcessExit += (sender, args) =>
+                {
+                    if (shouldExit) return;
+
+                    shouldExit = true;
+                    Logger.Log("Received exit signal.", Logger.Level.Info);
+                };
             }
+
+            while (!shouldExit)
+            {
+                Thread.Sleep(100);
+            }
+
+            server.Stop();
+        }
+
+        private static void CurrentDomain_ProcessExit(object? sender, EventArgs e)
+        {
+            throw new NotImplementedException();
         }
     }
 }
