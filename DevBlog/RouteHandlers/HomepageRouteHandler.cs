@@ -10,7 +10,7 @@ namespace DevBlog.RouteHandlers
     {
         private readonly MarkdownPipeline pipeline;
 
-        public HomepageRouteHandler(MarkdownPipeline pipeline) : base("/")
+        internal HomepageRouteHandler(MarkdownPipeline pipeline) : base("/")
         {
             this.pipeline = pipeline;
         }

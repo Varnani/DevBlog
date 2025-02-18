@@ -1,4 +1,5 @@
-﻿using DevBlog.RouteHandlers;
+﻿using DevBlog.Helpers;
+using DevBlog.RouteHandlers;
 using DevBlog.Server;
 using Markdig;
 
@@ -8,17 +9,11 @@ namespace DevBlog
     {
         static void Main(string[] _)
         {
+#if DEBUG
+            Logger.LogLevel = Logger.Level.Debug;
+#endif
             WebServer server = new();
 
-            RegisterRoutes(server);
-
-            server.Start();
-
-            RunCommandLoop(server);
-        }
-
-        private static void RegisterRoutes(WebServer server)
-        {
             MarkdownPipeline pipeline = new MarkdownPipelineBuilder()
                 .UseAdvancedExtensions()
                 .Build();
@@ -28,44 +23,12 @@ namespace DevBlog
 
             server.AddRoute(homepageHandler);
             server.AddRoute(postHandler);
-        }
 
-        private static void RunCommandLoop(WebServer server)
-        {
+            server.Start();
+
             while (true)
             {
-                string? line = Console.ReadLine();
-
-                if (line == null) continue;
-
-                if (line == "stop")
-                {
-                    if (!server.Started) Console.WriteLine("Server is not running.");
-                    else server.Stop();
-                }
-
-                else if (line == "start")
-                {
-                    if (server.Started) Console.WriteLine("Server is already running.");
-                    else server.Start();
-                }
-
-                else if (line == "restart")
-                {
-                    if (server.Started) server.Stop();
-                    server.Start();
-                }
-
-                else if (line == "exit")
-                {
-                    if (server.Started) server.Stop();
-                    break;
-                }
-
-                else
-                {
-                    Console.WriteLine("Unknown command.");
-                }
+                Console.ReadLine();
             }
         }
     }

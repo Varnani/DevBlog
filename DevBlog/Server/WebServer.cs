@@ -1,6 +1,7 @@
 ﻿using DevBlog.Helpers;
 using DevBlog.RouteHandlers;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.IO.Compression;
 using System.Net;
 using System.Text;
@@ -29,12 +30,13 @@ namespace DevBlog.Server
         private const string ERROR_TYPE_TOKEN = "%ERROR_TYPE%";
         private const string ERROR_MESSAGE_TOKEN = "%ERROR_MSG%";
 
+        private static Dictionary<int, Stopwatch> timers = new();
+
         private bool started = false;
         private bool cancelToken = false;
         private Lock lockObject = new();
         private Task? serverLoopTask = null;
-
-        private Dictionary<string, BaseRouteHandler> routerDict = new();
+        private Dictionary<string, BaseRouteHandler> routes = new();
 
         internal bool Started
         {
@@ -49,7 +51,7 @@ namespace DevBlog.Server
 
             cancelToken = false;
 
-            Console.WriteLine("Starting server...");
+            Logger.Log("Starting server...", Logger.Level.Info);
 
             serverLoopTask = Task.Run(() =>
             {
@@ -66,21 +68,21 @@ namespace DevBlog.Server
 
             serverLoopTask?.Wait();
 
-            Console.WriteLine("Server closed. Bye!");
+            Logger.Log("Server closed. Bye!", Logger.Level.Info);
         }
 
         internal void AddRoute(BaseRouteHandler handler)
         {
-            routerDict.Add(handler.Route, handler);
+            routes.Add(handler.Route, handler);
         }
 
         private void ServerLoop()
         {
-            Console.WriteLine("Configuring listener...");
+            Logger.Log("Configuring listener...", Logger.Level.Info);
             HttpListener listener = new();
             listener.Prefixes.Add(LISTEN_ADDR);
 
-            Console.WriteLine("Starting listener...");
+            Logger.Log("Starting listener...", Logger.Level.Info);
             listener.Start();
 
             List<Task> handlers = new(MAX_HANDLERS);
@@ -109,8 +111,8 @@ namespace DevBlog.Server
                     {
                         if (task.Status == TaskStatus.Faulted)
                         {
-                            Console.WriteLine("A handler was faulted.");
-                            Console.WriteLine(task.Exception);
+                            Logger.Log("A handler was faulted.", Logger.Level.Error);
+                            Logger.Log(task.Exception!.ToString(), Logger.Level.Error);
                         }
 
                         handlers[i] = StartListenerTask();
@@ -125,7 +127,7 @@ namespace DevBlog.Server
                 Thread.Sleep(100);
             }
 
-            Console.WriteLine("Stopping server...");
+            Logger.Log("Stopping server...", Logger.Level.Info);
             listener.Stop();
         }
 
@@ -136,82 +138,86 @@ namespace DevBlog.Server
             HttpListenerRequest request = ctx.Request;
             HttpListenerResponse response = ctx.Response;
 
-            Console.WriteLine("------------------------");
-            Console.WriteLine($"Incoming {request.HttpMethod} request from {request.Headers.Get("X-Real-IP")} to {request.RawUrl}");
-            Console.WriteLine(request.Headers);
-            Console.WriteLine("------------------------");
+            int id = request.GetHashCode();
+            timers.Add(id, Stopwatch.StartNew());
+
+            Logger.Log($"ID:{id} - Incoming {request.HttpMethod} request from {request.Headers.Get("X-Real-IP")} to {request.RawUrl}", Logger.Level.Info);
 
             HttpMethod method = new(request.HttpMethod);
             bool headOnly = method == HttpMethod.Head;
 
             try
             {
+                ResponseParams responseParams;
+
                 if (method != HttpMethod.Get && method != HttpMethod.Head)
                 {
-                    ResponseParams responseParams = GenerateErrorResponse(HttpStatusCode.NotImplemented, $"HTTP Method {request.HttpMethod} is not supported.");
-                    SendResponse(responseParams, request, response, headOnly);
-                    return;
-                }
-
-                string route;
-                string query;
-
-                if (request.RawUrl == null)
-                {
-                    route = "/";
-                    query = string.Empty;
+                    responseParams = GenerateErrorResponse(HttpStatusCode.NotImplemented, $"HTTP Method {request.HttpMethod} is not supported.");
                 }
 
                 else
                 {
-                    route = request.RawUrl.LeftOf('?');
-                    query = request.RawUrl.RightOf('?');
+                    string route;
+                    string query;
+
+                    if (request.RawUrl == null)
+                    {
+                        route = "/";
+                        query = string.Empty;
+                    }
+
+                    else
+                    {
+                        route = request.RawUrl.LeftOf('?');
+                        query = request.RawUrl.RightOf('?');
+                    }
+
+                    NameValueCollection parameters = HttpUtility.ParseQueryString(query);
+
+                    if (routes.TryGetValue(route, out BaseRouteHandler? handler))
+                    {
+                        responseParams = handler!.HandleResponse(parameters);
+                    }
+
+                    else
+                    {
+                        // there aren't any handlers for the requested route. 
+                        // we'll try to serve a file instead.
+
+                        string file = route.LeftOf('.');
+                        string extension = route.RightOf('.');
+
+                        if (string.IsNullOrWhiteSpace(extension)) extension = "html";
+                        if (file == "/" || string.IsNullOrWhiteSpace(file)) file = "/index";
+
+                        if (file[^1] == '/')
+                        {
+                            file += "index";
+                        }
+
+                        string path = $"{ROOT_PATH}{file}.{extension}";
+
+                        if (!File.Exists(path))
+                        {
+                            responseParams = GenerateErrorResponse(HttpStatusCode.NotFound, "Content not found.");
+                        }
+
+                        else
+                        {
+                            if (FileRequestHandlers.Handlers.TryGetValue(extension, out FileRequestHandlers.HandlerDelegate? serveHandler))
+                            {
+                                responseParams = serveHandler!.Invoke(path);
+                            }
+
+                            else
+                            {
+                                responseParams = GenerateErrorResponse(HttpStatusCode.ServiceUnavailable, "Content unavailable.");
+                            }
+                        }
+                    }
                 }
 
-                NameValueCollection parameters = HttpUtility.ParseQueryString(query);
-
-                if (routerDict.TryGetValue(route, out BaseRouteHandler? handler))
-                {
-                    ResponseParams responseParams = handler!.HandleResponse(parameters);
-                    SendResponse(responseParams, request, response, headOnly);
-                    return;
-                }
-
-                // there aren't any handlers for the requested route. 
-                // we'll try to serve a file instead.
-
-                string file = route.LeftOf('.');
-                string extension = route.RightOf('.');
-
-                if (string.IsNullOrWhiteSpace(extension)) extension = "html";
-                if (file == "/" || string.IsNullOrWhiteSpace(file)) file = "/index";
-
-                if (file[^1] == '/')
-                {
-                    file += "index";
-                }
-
-                string path = $"{ROOT_PATH}{file}.{extension}";
-
-                if (!File.Exists(path))
-                {
-                    ResponseParams responseParams = GenerateErrorResponse(HttpStatusCode.NotFound, "Content not found.");
-                    SendResponse(responseParams, request, response, headOnly);
-                    return;
-                }
-
-                if (FileRequestHandlers.Handlers.TryGetValue(extension, out FileRequestHandlers.HandlerDelegate? serveHandler))
-                {
-                    ResponseParams responseParams = serveHandler!.Invoke(path);
-                    SendResponse(responseParams, request, response, headOnly);
-                }
-
-                else
-                {
-                    ResponseParams responseParams = GenerateErrorResponse(HttpStatusCode.ServiceUnavailable, "Content unavailable.");
-                    SendResponse(responseParams, request, response, headOnly);
-                    return;
-                }
+                SendResponse(responseParams, request, response, headOnly);
             }
 
             catch (Exception)
@@ -241,6 +247,8 @@ namespace DevBlog.Server
                 data = data,
                 encoding = Encoding.UTF8
             };
+
+            Logger.Log($"Generated error response: {error} - {message}", Logger.Level.Error);
 
             return response;
         }
@@ -281,6 +289,14 @@ namespace DevBlog.Server
             }
 
             response.OutputStream.Close();
+
+            int id = request.GetHashCode();
+            Stopwatch timer = timers[id];
+            timer.Stop();
+
+            Logger.Log($"ID:{id} - Sent response. Elapsed: {timer}", Logger.Level.Info);
+
+            timers.Remove(id);
         }
     }
 }
