@@ -294,7 +294,7 @@ namespace DevBlog.Server
             Stopwatch timer = timers[id];
             timer.Stop();
 
-            Logger.Log($"ID:{id} - Sent response. Elapsed: {timer}", Logger.Level.Info);
+            Logger.Log($"ID:{id} - Sent response. Elapsed: {timer.Elapsed.Milliseconds}ms", Logger.Level.Info);
 
             timers.Remove(id);
         }
