@@ -4,14 +4,6 @@ namespace DevBlog.Helpers
 {
     internal static class RouteHelpers
     {
-        internal static FileInfo[] GetPostFiles()
-        {
-            DirectoryInfo info = new(Path.Combine(Server.WebServer.ROOT_PATH, "Posts/"));
-            FileInfo[] files = info.GetFiles();
-
-            return files;
-        }
-
         internal static string LoadTextFile(string path)
         {
             using StreamReader stream = File.OpenText(path);

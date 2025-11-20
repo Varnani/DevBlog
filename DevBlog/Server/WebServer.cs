@@ -82,7 +82,7 @@ namespace DevBlog.Server
             HttpListener listener = new();
             listener.Prefixes.Add(LISTEN_ADDR);
 
-            Logger.Log("Starting listener...", Logger.Level.Info);
+            Logger.Log($"Starting listener on {LISTEN_ADDR}...", Logger.Level.Info);
             listener.Start();
 
             List<Task> handlers = new(MAX_HANDLERS);

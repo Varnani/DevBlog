@@ -17,22 +17,14 @@ namespace DevBlog.RouteHandlers
 
         internal override ResponseParams HandleResponse(NameValueCollection parameters)
         {
-            FileInfo[] files = RouteHelpers.GetPostFiles();
+            List<PostData> posts = PostDatabase.GetPosts();
 
             StringBuilder postListBuilder = new();
 
-            for (int i = 0; i < files.Length; i++)
+            for (int i = 0; i < posts.Count; i++)
             {
-                FileInfo file = files[i];
-
-                string title = file.Name;
-                title = title.LeftOf('.');
-                title = title.Replace('-', ' ');
-                title = title.Capitalize();
-
-                DateTime date = file.CreationTimeUtc;
-
-                postListBuilder.AppendLine($"[{date} - {title}](/post?id={i})  ");
+                PostData post = posts[i];
+                postListBuilder.AppendLine($"[{post.date} - {post.title}](/post?id={i})  ");
             }
 
             string mdPath = Path.Combine(WebServer.SPECIAL_PATH, "home_content.md");

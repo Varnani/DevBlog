@@ -39,75 +39,44 @@ namespace DevBlog.RouteHandlers
                 return error;
             }
 
-            string? mdPath = null;
+            PostData? postData = PostDatabase.GetPost(id);
 
-            if (id == -1)
-            {
-                mdPath = Path.Combine(WebServer.SPECIAL_PATH, "test_markdown.md");
-            }
-
-            else
-            {
-                FileInfo[] files = RouteHelpers.GetPostFiles();
-
-                if (id < files.Length)
-                {
-                    Array.Sort(files, (file1, file2) =>
-                    {
-                        return file1.CreationTime.CompareTo(file2.CreationTime);
-                    });
-
-                    mdPath = files[id].FullName;
-                }
-            }
-
-            if (mdPath is null)
+            if (postData is null)
             {
                 ResponseParams error = WebServer.GenerateErrorResponse(HttpStatusCode.NotFound, "Post not found.");
                 return error;
             }
 
-            else
+            string markdown = postData.Value.content;
+
+            string content;
+
+            lock (pipeline)
             {
-                string markdown = RouteHelpers.LoadTextFile(mdPath);
+                Stopwatch stopWatch = Stopwatch.StartNew();
 
-                string content;
+                content = Markdown.ToHtml(markdown, pipeline: pipeline);
 
-                lock (pipeline)
-                {
-                    if (id == -1)
-                    {
-                        Stopwatch stopWatch = Stopwatch.StartNew();
+                stopWatch.Stop();
+                TimeSpan elapsed = stopWatch.Elapsed;
 
-                        content = Markdown.ToHtml(markdown, pipeline: pipeline);
-
-                        stopWatch.Stop();
-                        TimeSpan elapsed = stopWatch.Elapsed;
-
-                        content = content.Replace("%MD_RENDER_TIME%", elapsed.TotalSeconds.ToString());
-                    }
-
-                    else
-                    {
-                        content = Markdown.ToHtml(markdown, pipeline: pipeline);
-                    }
-                }
-
-                string html = RouteHelpers.GetPostTemplate();
-                StringBuilder htmlBuilder = new(html);
-
-                RouteHelpers.InsertPostContent(htmlBuilder, content);
-                RouteHelpers.InsertCurrentYear(htmlBuilder);
-
-                ResponseParams response = new()
-                {
-                    mime = WebServer.HTML_MIME,
-                    data = Encoding.UTF8.GetBytes(htmlBuilder.ToString()),
-                    encoding = Encoding.UTF8
-                };
-
-                return response;
+                content = content.Replace("%MD_RENDER_TIME%", elapsed.TotalSeconds.ToString());
             }
+
+            string html = RouteHelpers.GetPostTemplate();
+            StringBuilder htmlBuilder = new(html);
+
+            RouteHelpers.InsertPostContent(htmlBuilder, content);
+            RouteHelpers.InsertCurrentYear(htmlBuilder);
+
+            ResponseParams response = new()
+            {
+                mime = WebServer.HTML_MIME,
+                data = Encoding.UTF8.GetBytes(htmlBuilder.ToString()),
+                encoding = Encoding.UTF8
+            };
+
+            return response;
         }
     }
 }

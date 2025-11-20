@@ -17,7 +17,6 @@
         {
             if (level < LogLevel) return;
 
-            string prepend = level.ToString().ToUpper();
             string msg = $"{DateTime.Now} - {GetPrepend(level)}: {message}";
 
             if (level == Level.Error || level == Level.Critical)
