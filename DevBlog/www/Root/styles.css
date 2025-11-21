@@ -23,6 +23,35 @@ body {
     grid-template-rows: auto 1fr auto;
 }
 
+.metadata {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: 10px;
+
+    box-sizing: border-box;
+    font-size: large;
+    color: #E0E1DD;
+    padding: 25px;
+    width: 800px;
+    min-height: auto;
+    background-color: #1B263B;
+    border: 1px solid #233850;
+    border-radius: 10px;
+    border-style: none;
+    box-shadow: 0px 10px 5px #090f16;
+}
+
+.title {
+    font-size: xx-large;
+    color: #778DA9;
+}
+
+.date {
+    font-size: small;
+    color: #949177;
+}
+
 .header {
     background-color: #1B263B;
     color: #E0E1DD;
@@ -48,8 +77,10 @@ a:hover {
 
 .main-body {
     padding: 20px;
-    display: grid;
-    place-items: start center;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: 20px;
 }
 
 .content {
@@ -57,7 +88,7 @@ a:hover {
     font-size: large;
     color: #E0E1DD;
     padding: 25px;
-    max-width: 800px;
+    width: 800px;
     height: 100%;
     background-color: #1B263B;
     border: 1px solid #233850;

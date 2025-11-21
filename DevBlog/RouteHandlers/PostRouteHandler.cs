@@ -57,6 +57,9 @@ namespace DevBlog.RouteHandlers
             string html = RouteHelpers.GetPostTemplate();
             StringBuilder htmlBuilder = new(html);
 
+            htmlBuilder.Replace("%TITLE%", postData.Value.title);
+            htmlBuilder.Replace("%DATE%", postData.Value.date.ToString());
+
             RouteHelpers.InsertPostContent(htmlBuilder, content);
             RouteHelpers.InsertCurrentYear(htmlBuilder);
 
