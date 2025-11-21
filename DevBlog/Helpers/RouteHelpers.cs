@@ -20,6 +20,14 @@ namespace DevBlog.Helpers
             return html;
         }
 
+        internal static string GetHomeTemplate()
+        {
+            string htmlPath = Path.Combine(Server.WebServer.SPECIAL_PATH, "home_template.html");
+            string html = LoadTextFile(htmlPath);
+
+            return html;
+        }
+
         internal static void InsertPostContent(StringBuilder sb, string result)
         {
             sb.Replace("%POST_CONTENT%", result);
@@ -28,6 +36,11 @@ namespace DevBlog.Helpers
         internal static void InsertCurrentYear(StringBuilder sb)
         {
             sb.Replace("%CURRENT_YEAR%", DateTime.Now.Year.ToString());
+        }
+
+        internal static void InsertRenderTime(StringBuilder sb, TimeSpan elapsed)
+        {
+            sb.Replace("%RENDER_TIME%", $"{elapsed.TotalMilliseconds}ms");
         }
     }
 }

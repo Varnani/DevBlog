@@ -1,7 +1,6 @@
 ﻿using DevBlog.Helpers;
 using DevBlog.RouteHandlers;
 using System.Collections.Specialized;
-using System.Diagnostics;
 using System.IO.Compression;
 using System.Net;
 using System.Text;
@@ -29,8 +28,6 @@ namespace DevBlog.Server
 
         private const string ERROR_TYPE_TOKEN = "%ERROR_TYPE%";
         private const string ERROR_MESSAGE_TOKEN = "%ERROR_MSG%";
-
-        private static Dictionary<int, Stopwatch> timers = new();
 
         private bool started = false;
         private bool cancelToken = false;
@@ -139,7 +136,6 @@ namespace DevBlog.Server
             HttpListenerResponse response = ctx.Response;
 
             int id = request.GetHashCode();
-            timers.Add(id, Stopwatch.StartNew());
 
             Logger.Log($"ID:{id} - Incoming {request.HttpMethod} request from {request.Headers.Get("X-Real-IP")} to {request.RawUrl}", Logger.Level.Info);
 
@@ -289,14 +285,6 @@ namespace DevBlog.Server
             }
 
             response.OutputStream.Close();
-
-            int id = request.GetHashCode();
-            Stopwatch timer = timers[id];
-            timer.Stop();
-
-            Logger.Log($"ID:{id} - Sent response. Elapsed: {timer.Elapsed.Milliseconds}ms", Logger.Level.Info);
-
-            timers.Remove(id);
         }
     }
 }

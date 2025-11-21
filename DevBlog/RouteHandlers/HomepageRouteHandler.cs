@@ -2,6 +2,7 @@
 using DevBlog.Server;
 using Markdig;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Text;
 
 namespace DevBlog.RouteHandlers
@@ -17,6 +18,8 @@ namespace DevBlog.RouteHandlers
 
         internal override ResponseParams HandleResponse(NameValueCollection parameters)
         {
+            Stopwatch stopWatch = Stopwatch.StartNew();
+
             List<PostData> posts = PostDatabase.GetPosts();
 
             StringBuilder postListBuilder = new();
@@ -39,11 +42,16 @@ namespace DevBlog.RouteHandlers
                 content = Markdown.ToHtml(markdown, pipeline);
             }
 
-            string html = RouteHelpers.GetPostTemplate();
+            string html = RouteHelpers.GetHomeTemplate();
             StringBuilder htmlBuilder = new(html);
 
             RouteHelpers.InsertPostContent(htmlBuilder, content);
             RouteHelpers.InsertCurrentYear(htmlBuilder);
+
+            stopWatch.Stop();
+            TimeSpan elapsed = stopWatch.Elapsed;
+
+            RouteHelpers.InsertRenderTime(htmlBuilder, elapsed);
 
             ResponseParams response = new()
             {

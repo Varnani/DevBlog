@@ -19,6 +19,8 @@ namespace DevBlog.RouteHandlers
 
         internal override ResponseParams HandleResponse(NameValueCollection parameters)
         {
+            Stopwatch stopWatch = Stopwatch.StartNew();
+
             string? value = parameters["id"];
 
             if (value == null)
@@ -50,24 +52,18 @@ namespace DevBlog.RouteHandlers
             string markdown = postData.Value.content;
 
             string content;
-
-            lock (pipeline)
-            {
-                Stopwatch stopWatch = Stopwatch.StartNew();
-
-                content = Markdown.ToHtml(markdown, pipeline: pipeline);
-
-                stopWatch.Stop();
-                TimeSpan elapsed = stopWatch.Elapsed;
-
-                content = content.Replace("%MD_RENDER_TIME%", elapsed.TotalSeconds.ToString());
-            }
+            lock (pipeline) content = Markdown.ToHtml(markdown, pipeline: pipeline);
 
             string html = RouteHelpers.GetPostTemplate();
             StringBuilder htmlBuilder = new(html);
 
             RouteHelpers.InsertPostContent(htmlBuilder, content);
             RouteHelpers.InsertCurrentYear(htmlBuilder);
+
+            stopWatch.Stop();
+            TimeSpan elapsed = stopWatch.Elapsed;
+
+            RouteHelpers.InsertRenderTime(htmlBuilder, elapsed);
 
             ResponseParams response = new()
             {

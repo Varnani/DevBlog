@@ -41,6 +41,9 @@
     <None Update="www\SpecialPages\home_content.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="www\SpecialPages\home_template.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="www\SpecialPages\post_template.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

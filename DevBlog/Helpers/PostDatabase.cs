@@ -9,6 +9,7 @@
 
     internal static class PostDatabase
     {
+        private static PostData testData = new();
         private static readonly List<PostData> postCache = new(100);
 
         static PostDatabase()
@@ -23,12 +24,17 @@
 
         public static PostData? GetPost(int id)
         {
+            if (id == -1) return testData;
             if (id < postCache.Count && id >= 0) return postCache[id];
             return null;
         }
 
         private static void UpdatePostCache()
         {
+            testData.title = "Super Secret Test Page";
+            testData.date = DateTime.Now;
+            testData.content = RouteHelpers.LoadTextFile(Path.Combine(Server.WebServer.SPECIAL_PATH, "test_markdown.md"));
+
             postCache.Clear();
 
             FileInfo[] files;
@@ -88,25 +94,7 @@
                 postCache.Add(data);
             }
 
+            postCache.Sort((left, right) => { return right.date.CompareTo(left.date); });
         }
     }
-
-    //mdPath = Path.Combine(WebServer.SPECIAL_PATH, "test_markdown.md");
-
-    //    internal static FileInfo[] GetPostFiles()
-    //{
-    //    static int FileDateComparer(FileInfo left, FileInfo right)
-    //    {
-    //        left.Refresh();
-    //        right.Refresh();
-    //        return right.CreationTimeUtc.CompareTo(left.CreationTimeUtc);
-    //    }
-
-    //    DirectoryInfo info = new(Path.Combine(Server.WebServer.ROOT_PATH, "Posts/"));
-    //    FileInfo[] files = info.GetFiles();
-
-    //    Array.Sort(files, FileDateComparer);
-
-    //    return files;
-    //}
 }
