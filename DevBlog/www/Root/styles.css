@@ -42,12 +42,12 @@ body {
     box-shadow: 0px 10px 5px #090f16;
 }
 
-.title {
+.post-title {
     font-size: xx-large;
     color: #778DA9;
 }
 
-.date {
+.post-date {
     font-size: small;
     color: #949177;
 }
@@ -95,6 +95,28 @@ a:hover {
     border-radius: 10px;
     border-style: none;
     box-shadow: 0px 10px 5px #090f16;
+}
+
+.home-post-holder {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.home-posts {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.home-post-date {
+    text-align: left;
+    color: #949177;
+}
+
+.home-post-title {
+    text-align: right;
 }
 
 code {

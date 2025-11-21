@@ -22,30 +22,23 @@ namespace DevBlog.RouteHandlers
 
             List<PostData> posts = PostDatabase.GetPosts();
 
-            StringBuilder postListBuilder = new();
+            StringBuilder postListBuilder = new(1000);
 
+            postListBuilder.Append("<div class=home-posts>");
             for (int i = 0; i < posts.Count; i++)
             {
                 PostData post = posts[i];
-                postListBuilder.AppendLine($"[{post.date} - {post.title}](/post?id={i})  ");
+                postListBuilder.Append("<div class=home-post-holder>");
+                postListBuilder.Append($"<div class=home-post-title><a href=/post?id={i}>{post.title}</a></div>");
+                postListBuilder.Append($"<div class=home-post-date>{post.date}</div>");
+                postListBuilder.Append("</div>");
             }
-
-            string mdPath = Path.Combine(WebServer.SPECIAL_PATH, "home_content.md");
-            string markdown = RouteHelpers.LoadTextFile(mdPath);
-
-            markdown = markdown.Replace("%POST_LIST%", postListBuilder.ToString());
-
-            string content;
-
-            lock (pipeline)
-            {
-                content = Markdown.ToHtml(markdown, pipeline);
-            }
+            postListBuilder.Append("</div>");
 
             string html = RouteHelpers.GetHomeTemplate();
             StringBuilder htmlBuilder = new(html);
 
-            RouteHelpers.InsertPostContent(htmlBuilder, content);
+            htmlBuilder.Replace("%POST_LIST%", postListBuilder.ToString());
             RouteHelpers.InsertCurrentYear(htmlBuilder);
 
             stopWatch.Stop();

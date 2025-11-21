@@ -28,11 +28,6 @@ namespace DevBlog.Helpers
             return html;
         }
 
-        internal static void InsertPostContent(StringBuilder sb, string result)
-        {
-            sb.Replace("%POST_CONTENT%", result);
-        }
-
         internal static void InsertCurrentYear(StringBuilder sb)
         {
             sb.Replace("%CURRENT_YEAR%", DateTime.Now.Year.ToString());

@@ -59,8 +59,8 @@ namespace DevBlog.RouteHandlers
 
             htmlBuilder.Replace("%TITLE%", postData.Value.title);
             htmlBuilder.Replace("%DATE%", postData.Value.date.ToString());
+            htmlBuilder.Replace("%POST_CONTENT%", content);
 
-            RouteHelpers.InsertPostContent(htmlBuilder, content);
             RouteHelpers.InsertCurrentYear(htmlBuilder);
 
             stopWatch.Stop();
