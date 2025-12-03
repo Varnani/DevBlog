@@ -11,18 +11,20 @@ namespace DevBlog.RouteHandlers
     {
         internal HomepageRouteHandler(MarkdownPipeline pipeline) : base("/", pipeline) { }
 
+        private readonly StringBuilder postListBuilder = new(10000);
+        private readonly StringBuilder htmlBuilder = new(10000);
+
         internal override ResponseParams HandleResponse(NameValueCollection parameters)
         {
             Stopwatch stopWatch = Stopwatch.StartNew();
 
-            List<PostData> posts = PostDatabase.GetPosts();
+            IReadOnlyList<PostData> posts = PostDatabase.GetPosts();
 
-            StringBuilder postListBuilder = new(1000);
+            postListBuilder.Clear();
 
             postListBuilder.Append("<div class=home-posts>");
             for (int i = 0; i < posts.Count; i++)
             {
-
                 PostData post = posts[i];
 
                 string formattedDate = post.date.ToString(StringHelpers.DATE_FORMAT);
@@ -35,9 +37,11 @@ namespace DevBlog.RouteHandlers
             postListBuilder.Append("</div>");
 
             string html = RouteHelpers.GetHomeTemplate();
-            StringBuilder htmlBuilder = new(html);
 
+            htmlBuilder.Clear();
+            htmlBuilder.Append(html);
             htmlBuilder.Replace("%POST_LIST%", postListBuilder.ToString());
+
             RouteHelpers.InsertCurrentYear(htmlBuilder);
 
             stopWatch.Stop();

@@ -12,6 +12,8 @@ namespace DevBlog.RouteHandlers
     {
         internal PostRouteHandler(MarkdownPipeline pipeline) : base("/post", pipeline) { }
 
+        private readonly StringBuilder htmlBuilder = new(10000);
+
         internal override ResponseParams HandleResponse(NameValueCollection parameters)
         {
             Stopwatch stopWatch = Stopwatch.StartNew();
@@ -50,10 +52,10 @@ namespace DevBlog.RouteHandlers
             lock (pipeline) content = Markdown.ToHtml(markdown, pipeline: pipeline);
 
             string html = RouteHelpers.GetPostTemplate();
-            StringBuilder htmlBuilder = new(html);
-
             string formattedDate = postData.Value.date.ToString(StringHelpers.DATE_FORMAT);
 
+            htmlBuilder.Clear();
+            htmlBuilder.Append(html);
             htmlBuilder.Replace("%TITLE%", postData.Value.title);
             htmlBuilder.Replace("%DATE%", formattedDate);
             htmlBuilder.Replace("%POST_CONTENT%", content);

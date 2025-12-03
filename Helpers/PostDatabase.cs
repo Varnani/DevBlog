@@ -17,7 +17,7 @@
             UpdatePostCache();
         }
 
-        public static List<PostData> GetPosts()
+        public static IReadOnlyList<PostData> GetPosts()
         {
             return postCache;
         }
