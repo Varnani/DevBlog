@@ -1,1 +1,1 @@
-Hello there. This is the homepage. Posts can be found below.
+﻿Hello there. I'm Ozan, a gamedev from Türkiye and this is my home on the web. I plan to blog from time to time here.

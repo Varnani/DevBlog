@@ -37,10 +37,13 @@ namespace DevBlog.RouteHandlers
             postListBuilder.Append("</div>");
 
             string html = RouteHelpers.GetHomeTemplate();
+            string content = RouteHelpers.GetHomeContent();
+            lock (pipeline) content = Markdown.ToHtml(content, pipeline: pipeline);
 
             htmlBuilder.Clear();
             htmlBuilder.Append(html);
             htmlBuilder.Replace("%POST_LIST%", postListBuilder.ToString());
+            htmlBuilder.Replace("%HOME_CONTENT%", content);
 
             RouteHelpers.InsertCurrentYear(htmlBuilder);
 

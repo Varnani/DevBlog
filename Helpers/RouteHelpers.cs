@@ -6,26 +6,36 @@ namespace DevBlog.Helpers
     {
         internal static string LoadTextFile(string path)
         {
-            using StreamReader stream = File.OpenText(path);
-            string content = stream.ReadToEnd();
-
-            return content;
+            try
+            {
+                using StreamReader stream = File.OpenText(path);
+                string content = stream.ReadToEnd();
+                return content;
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"An exception occured while loading file at path {path}.", Logger.Level.Error);
+                Logger.Log(ex.Message, Logger.Level.Error);
+                return "n/a";
+            }
         }
 
         internal static string GetPostTemplate()
         {
-            string htmlPath = Path.Combine(Server.WebServer.SPECIAL_PATH, "post_template.html");
-            string html = LoadTextFile(htmlPath);
-
-            return html;
+            string path = Path.Combine(Server.WebServer.SPECIAL_PATH, "post_template.html");
+            return LoadTextFile(path);
         }
 
         internal static string GetHomeTemplate()
         {
-            string htmlPath = Path.Combine(Server.WebServer.SPECIAL_PATH, "home_template.html");
-            string html = LoadTextFile(htmlPath);
+            string path = Path.Combine(Server.WebServer.SPECIAL_PATH, "home_template.html");
+            return LoadTextFile(path);
+        }
 
-            return html;
+        internal static string GetHomeContent()
+        {
+            string path = Path.Combine(Server.WebServer.SPECIAL_PATH, "home_content.md");
+            return LoadTextFile(path);
         }
 
         internal static void InsertCurrentYear(StringBuilder sb)

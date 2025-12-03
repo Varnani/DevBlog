@@ -1,4 +1,4 @@
-Welcome to the super-secret markdown test page. This document is directly lifted from [mxstbr/markdown-test-file](https://github.com/mxstbr/markdown-test-file). Markdown is rendered using [Markdig](https://github.com/xoofx/markdig). Check the bottom of the page for render time.
+﻿Welcome to the super-secret markdown test page. This document is directly lifted from [mxstbr/markdown-test-file](https://github.com/mxstbr/markdown-test-file). Markdown is rendered using [Markdig](https://github.com/xoofx/markdig). Check the bottom of the page for render time.
 
 * * *
 
