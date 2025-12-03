@@ -1,1 +1,1 @@
-﻿Hello there. I'm Ozan, a gamedev from Türkiye and this is my home on the web. I plan to blog from time to time here.
+﻿Hello there. I'm Ozan, a gamedev from Türkiye and this is my home on the web. I plan to blog here from time to time. Pick a post below!
