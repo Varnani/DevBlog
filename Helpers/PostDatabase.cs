@@ -41,7 +41,7 @@
 
             try
             {
-                DirectoryInfo info = new(Path.Combine(Server.WebServer.ROOT_PATH, "Posts/"));
+                DirectoryInfo info = new(Path.Combine(Server.WebServer.TOP_LEVEL_PATH, "Posts/"));
                 files = info.GetFiles();
             }
 

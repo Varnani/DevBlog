@@ -16,8 +16,9 @@ namespace DevBlog.Server
 
         public const string HTML_MIME = "text/html; charset=utf-8";
 
-        public const string SPECIAL_PATH = "www/SpecialPages";
-        public const string ROOT_PATH = "www/Root";
+        public const string TOP_LEVEL_PATH = "www";
+        public const string SPECIAL_PATH = TOP_LEVEL_PATH + "/SpecialPages";
+        public const string ROOT_PATH = TOP_LEVEL_PATH + "/Root";
 
         private const bool SEND_GZIP = true;
 
