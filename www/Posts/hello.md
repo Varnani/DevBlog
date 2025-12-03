@@ -21,5 +21,5 @@ It's pretty barebones, but handles my usecase. Using C# is a delight, so all in 
 
 Working with raw HTML and CSS was also an interesting experience. It wasn't *that* hard to whip up a simple design, but I get why there's a ton of tools around styling webpages.
 ## Conclusion
-Anyway, thank you for your time. You can browse the [source code here](/). Here's to many more blog posts!
+Anyway, thank you for your time. You can browse the [source code here](https://github.com/Varnani/DevBlog). Here's to many more blog posts!
 
