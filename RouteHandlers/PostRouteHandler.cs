@@ -10,12 +10,7 @@ namespace DevBlog.RouteHandlers
 {
     internal class PostRouteHandler : BaseRouteHandler
     {
-        private readonly MarkdownPipeline pipeline;
-
-        internal PostRouteHandler(MarkdownPipeline pipeline) : base("/post")
-        {
-            this.pipeline = pipeline;
-        }
+        internal PostRouteHandler(MarkdownPipeline pipeline) : base("/post", pipeline) { }
 
         internal override ResponseParams HandleResponse(NameValueCollection parameters)
         {
@@ -57,8 +52,10 @@ namespace DevBlog.RouteHandlers
             string html = RouteHelpers.GetPostTemplate();
             StringBuilder htmlBuilder = new(html);
 
+            string formattedDate = postData.Value.date.ToString(StringHelpers.DATE_FORMAT);
+
             htmlBuilder.Replace("%TITLE%", postData.Value.title);
-            htmlBuilder.Replace("%DATE%", postData.Value.date.ToString());
+            htmlBuilder.Replace("%DATE%", formattedDate);
             htmlBuilder.Replace("%POST_CONTENT%", content);
 
             RouteHelpers.InsertCurrentYear(htmlBuilder);

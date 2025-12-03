@@ -9,12 +9,7 @@ namespace DevBlog.RouteHandlers
 {
     internal class HomepageRouteHandler : BaseRouteHandler
     {
-        private readonly MarkdownPipeline pipeline;
-
-        internal HomepageRouteHandler(MarkdownPipeline pipeline) : base("/")
-        {
-            this.pipeline = pipeline;
-        }
+        internal HomepageRouteHandler(MarkdownPipeline pipeline) : base("/", pipeline) { }
 
         internal override ResponseParams HandleResponse(NameValueCollection parameters)
         {
@@ -27,10 +22,14 @@ namespace DevBlog.RouteHandlers
             postListBuilder.Append("<div class=home-posts>");
             for (int i = 0; i < posts.Count; i++)
             {
+
                 PostData post = posts[i];
+
+                string formattedDate = post.date.ToString(StringHelpers.DATE_FORMAT);
+
                 postListBuilder.Append("<div class=home-post-holder>");
                 postListBuilder.Append($"<div class=home-post-title><a href=/post?id={i}>{post.title}</a></div>");
-                postListBuilder.Append($"<div class=home-post-date>{post.date}</div>");
+                postListBuilder.Append($"<div class=home-post-date>{formattedDate}</div>");
                 postListBuilder.Append("</div>");
             }
             postListBuilder.Append("</div>");

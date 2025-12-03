@@ -4,6 +4,8 @@ namespace DevBlog.Helpers
 {
     internal static class StringHelpers
     {
+        public const string DATE_FORMAT = "ddd, dd MMM yyyy - HH:mm";
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static string LeftOf(this string str, char c)
         {

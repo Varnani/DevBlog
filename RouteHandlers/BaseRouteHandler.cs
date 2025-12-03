@@ -1,11 +1,13 @@
 ﻿using DevBlog.Server;
+using Markdig;
 using System.Collections.Specialized;
 
 namespace DevBlog.RouteHandlers
 {
-    internal abstract class BaseRouteHandler(string route)
+    internal abstract class BaseRouteHandler(string route, MarkdownPipeline pipeline)
     {
-        private string route = route;
+        protected string route = route;
+        protected readonly MarkdownPipeline pipeline = pipeline;
 
         internal string Route
         {
