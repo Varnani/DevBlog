@@ -135,9 +135,7 @@ namespace DevBlog.Server
             HttpListenerRequest request = ctx.Request;
             HttpListenerResponse response = ctx.Response;
 
-            int id = request.GetHashCode();
-
-            Logger.Log($"ID:{id} - Incoming {request.HttpMethod} request from {request.Headers.Get("X-Real-IP")} to {request.RawUrl}", Logger.Level.Info);
+            Logger.Log($"{request.Headers.Get("X-Real-IP")}: Incoming {request.HttpMethod} request to {request.RawUrl}", Logger.Level.Info);
 
             HttpMethod method = new(request.HttpMethod);
             bool headOnly = method == HttpMethod.Head;
