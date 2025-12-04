@@ -54,10 +54,5 @@ namespace DevBlog
 
             server.Stop();
         }
-
-        private static void CurrentDomain_ProcessExit(object? sender, EventArgs e)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

@@ -9,9 +9,8 @@ namespace DevBlog.Server
 {
     internal class WebServer
     {
-        // TODO: implement a config system
-        // TOOD: implement a rate limiting system
-        // TODO: implement a log system
+        // TODO: implement reading configuration from a file
+        // TODO: implement logging to a file
 
         public const string HTML_MIME = "text/html; charset=utf-8";
 
@@ -132,7 +131,7 @@ namespace DevBlog.Server
             HttpListenerRequest request = ctx.Request;
             HttpListenerResponse response = ctx.Response;
 
-            Logger.Log($"{request.Headers.Get("X-Real-IP")}: Incoming {request.HttpMethod} request to {request.RawUrl}", Logger.Level.Info);
+            Logger.Log($"{request.Headers.Get("X-Real-IP")}: Incoming {request.HttpMethod} request to {request.RawUrl}", Logger.Level.Debug);
 
             HttpMethod method = new(request.HttpMethod);
             bool headOnly = method == HttpMethod.Head;
