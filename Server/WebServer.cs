@@ -1,7 +1,6 @@
 ﻿using DevBlog.Helpers;
 using DevBlog.RouteHandlers;
 using System.Collections.Specialized;
-using System.IO.Compression;
 using System.Net;
 using System.Text;
 using System.Web;
@@ -20,13 +19,10 @@ namespace DevBlog.Server
         public const string SPECIAL_PATH = TOP_LEVEL_PATH + "/SpecialPages";
         public const string ROOT_PATH = TOP_LEVEL_PATH + "/Root";
 
-        private const bool SEND_GZIP = true;
-
         private const string LISTEN_ADDR = "http://127.0.0.1:2525/";
         private const int MAX_HANDLERS = 32;
 
         private const string ERROR_PAGE = "error_template.html";
-
         private const string ERROR_TYPE_TOKEN = "%ERROR_TYPE%";
         private const string ERROR_MESSAGE_TOKEN = "%ERROR_MSG%";
 
@@ -250,38 +246,14 @@ namespace DevBlog.Server
 
         private static void SendResponse(ResponseParams responseParams, HttpListenerRequest request, HttpListenerResponse response, bool headOnly)
         {
-            if (responseParams.data == null) responseParams.data = [];
-
-            if (SEND_GZIP)
-            {
-                string? acceptedEncodings = request.Headers["Accept-Encoding"];
-
-                if (acceptedEncodings != null)
-                {
-                    if (acceptedEncodings.Contains("gzip"))
-                    {
-                        using MemoryStream compressed = new();
-                        using GZipStream zip = new(compressed, CompressionMode.Compress);
-
-                        zip.Write(responseParams.data, 0, responseParams.data.Length);
-                        zip.Flush();
-
-                        responseParams.data = compressed.ToArray();
-
-                        response.AddHeader("Content-Encoding", "gzip");
-                    }
-                }
-            }
+            responseParams.data ??= [];
 
             response.StatusCode = (int)responseParams.code;
             response.ContentEncoding = responseParams.encoding;
             response.ContentType = responseParams.mime;
             response.ContentLength64 = responseParams.data.Length;
 
-            if (!headOnly)
-            {
-                response.OutputStream.Write(responseParams.data, 0, responseParams.data.Length);
-            }
+            if (!headOnly) response.OutputStream.Write(responseParams.data, 0, responseParams.data.Length);
 
             response.OutputStream.Close();
         }
