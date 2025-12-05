@@ -1,2 +1,2 @@
 # DevBlog
-A basic webserver for my (future) blog.
+A basic webserver for my blog at ozanguzel.dev
