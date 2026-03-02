@@ -23,7 +23,7 @@ namespace DevBlog.RouteHandlers
             postListBuilder.Clear();
 
             postListBuilder.Append("<div class=home-posts>");
-            for (int i = 0; i < posts.Count; i++)
+            for (int i = posts.Count - 1; i >= 0; i--)
             {
                 PostData post = posts[i];
 

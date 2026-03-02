@@ -98,7 +98,7 @@ void AnimatePlayer(Sprite& playerSprite)
 };
 ```
 
-Our renderer just needs to take the sprite, loop is pixels and write it into the buffer. We also center the sprite to the given point, this will simplify our draw logic outside the renderer. 
+Our renderer just needs to take the sprite, loop it's pixels and write it into the buffer. We also center the sprite to the given point, this will simplify our draw logic outside the renderer. 
 
 >We can always introduce "pivot" or "offset" into sprites later.
 

@@ -94,7 +94,7 @@
                 postCache.Add(data);
             }
 
-            postCache.Sort((left, right) => { return right.date.CompareTo(left.date); });
+            postCache.Sort((left, right) => { return left.date.CompareTo(right.date); });
         }
     }
 }
