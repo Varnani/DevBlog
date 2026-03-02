@@ -27,7 +27,7 @@ namespace DevBlog.RouteHandlers
             {
                 PostData post = posts[i];
 
-                string formattedDate = post.date.ToString(StringHelpers.DATE_FORMAT);
+                string formattedDate = post.date.ToString(StringHelpers.DATE_FORMAT) + " UTC";
 
                 postListBuilder.Append("<div class=home-post-holder>");
                 postListBuilder.Append($"<div class=home-post-title><a href=/post?id={i}>{post.title}</a></div>");

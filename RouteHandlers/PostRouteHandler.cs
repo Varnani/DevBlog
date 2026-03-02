@@ -52,7 +52,7 @@ namespace DevBlog.RouteHandlers
             lock (pipeline) content = Markdown.ToHtml(markdown, pipeline: pipeline);
 
             string html = RouteHelpers.GetPostTemplate();
-            string formattedDate = postData.Value.date.ToString(StringHelpers.DATE_FORMAT);
+            string formattedDate = postData.Value.date.ToString(StringHelpers.DATE_FORMAT) + " UTC";
 
             htmlBuilder.Clear();
             htmlBuilder.Append(html);
